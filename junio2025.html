@@ -51,10 +51,11 @@
         <!-- Header -->
         <header class="text-center mb-10">
             <div class="bg-white rounded-3xl shadow-lg p-6 sm:p-8 flex flex-col md:flex-row items-center justify-center md:justify-between gap-4 sm:gap-6">
-                <!-- Logo Colegio -->
+                
+                <!-- Logo Colegio (Visible en pantallas medianas y grandes) -->
                 <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/comedorcarlosiii.png" 
                      alt="Logo CEIP Carlos III" 
-                     class="h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 xl:h-48 xl:w-48 object-contain md:order-1"
+                     class="hidden md:block h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 xl:h-48 xl:w-48 object-contain md:order-1"
                      onerror="this.style.display='none'">
 
                 <!-- Títulos Centrados -->
@@ -64,11 +65,24 @@
                     <p id="menu-month-year" class="text-md md:text-lg lg:text-xl text-gray-500 mt-2"></p>
                 </div>
 
-                <!-- Logo Junta de Andalucía -->
+                <!-- Logo Junta de Andalucía (Visible en pantallas medianas y grandes) -->
                 <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/junta.png" 
                      alt="Logo Junta de Andalucía" 
-                     class="h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 xl:h-48 xl:w-48 object-contain md:order-3"
+                     class="hidden md:block h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 xl:h-48 xl:w-48 object-contain md:order-3"
                      onerror="this.style.display='none'">
+
+                <!-- Contenedor de Logos para Móvil (Visible solo en móvil) -->
+                <div class="flex md:hidden justify-center items-center gap-8 mt-4 order-last">
+                    <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/comedorcarlosiii.png" 
+                         alt="Logo CEIP Carlos III" 
+                         class="h-20 w-20 object-contain"
+                         onerror="this.style.display='none'">
+                    <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/junta.png" 
+                         alt="Logo Junta de Andalucía" 
+                         class="h-20 w-20 object-contain"
+                         onerror="this.style.display='none'">
+                </div>
+
             </div>
         </header>
 
@@ -390,3 +404,4 @@
     </script>
 </body>
 </html>
+
