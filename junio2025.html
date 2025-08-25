@@ -84,9 +84,10 @@
         <!-- Calendar Week Selector -->
         <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-10">
             <div class="flex items-center justify-between mb-4 px-2">
-                <h2 id="calendar-month" class="text-2xl font-bold text-cyan-800">
-                    <i class="far fa-calendar-alt mr-3"></i>
-                </h2>
+                <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors"><i class="fas fa-chevron-left"></i></button>
+                <h2 id="calendar-month" class="text-2xl font-bold text-cyan-800 text-center"></h2>
+                <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors"><i class="fas fa-chevron-right"></i></button>
+                <button id="today-btn" class="ml-4 px-4 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors shadow-sm">Hoy</button>
             </div>
             <div id="calendar-container" class="flex flex-col sm:flex-row gap-2 rounded-lg bg-gray-50 p-2">
                 <!-- Calendar weeks will be inserted here by JS -->
@@ -136,10 +137,11 @@
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyua5eFZ5z974Y_x0mIY7AvLRBEM4aaa_p69r9G4VXHP7NYilGJG4vfzwoYedMEmT_MLgEIVCCpZ/pub?output=csv";
 
         // --- ESTADO DE LA APLICACIÓN ---
-        let menuConfig = null;
+        let allMenuData = {}; // Almacenará todos los datos por año y mes
         let state = {
+            displayDate: new Date(), // Fecha que el usuario está viendo
             currentWeekIndex: 0,
-            todayInfo: { weekIndex: null, dayName: null }
+            todayInfo: { year: null, month: null, weekIndex: null, dayName: null }
         };
 
         // --- FUNCIONES DE CARGA Y PROCESAMIENTO DE DATOS ---
@@ -149,7 +151,7 @@
                 const response = await fetch(GOOGLE_SHEET_URL + '&t=' + new Date().getTime());
                 if (!response.ok) throw new Error('No se pudo cargar la hoja de cálculo.');
                 const csvText = await response.text();
-                menuConfig = parseCSVToMenuConfig(csvText);
+                allMenuData = parseCSVToMenuConfig(csvText);
                 return true;
             } catch (error) {
                 console.error("Error al cargar el menú:", error);
@@ -160,23 +162,28 @@
 
         function parseCSVToMenuConfig(csvText) {
             const rows = csvText.split('\n').slice(1);
-            const weeksData = {};
+            const data = {};
 
             rows.forEach(row => {
                 const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
-
                 const [dateStr, weekLabel, dayName, specialNotes = '', meals, dessert, nutrition, icon] = safeColumns;
                 
                 if (!dateStr || !weekLabel || !dayName) return;
 
-                if (!weeksData[weekLabel]) {
-                    const [day, month, year] = dateStr.split('/');
-                    weeksData[weekLabel] = {
+                const [day, month, year] = dateStr.split('/');
+                const yearNum = parseInt(year, 10);
+                const monthNum = parseInt(month, 10) - 1;
+
+                if (!data[yearNum]) data[yearNum] = {};
+                if (!data[yearNum][monthNum]) data[yearNum][monthNum] = { year: yearNum, month: monthNum, weeks: {} };
+
+                if (!data[yearNum][monthNum].weeks[weekLabel]) {
+                    data[yearNum][monthNum].weeks[weekLabel] = {
                         weekLabel,
-                        month: parseInt(month, 10) - 1,
+                        month: monthNum,
                         startDay: parseInt(day, 10),
-                        year: parseInt(year, 10),
+                        year: yearNum,
                         days: {}
                     };
                 }
@@ -184,7 +191,7 @@
                 const isHoliday = specialNotes.toLowerCase().includes('no lectivo');
                 const isSpecialEvent = specialNotes && !isHoliday;
 
-                weeksData[weekLabel].days[dayName] = {
+                data[yearNum][monthNum].weeks[weekLabel].days[dayName] = {
                     meals: specialNotes ? [specialNotes] : (meals ? meals.split(';').map(m => m.trim()) : []),
                     dessert: dessert || "",
                     nutrition: nutrition || "",
@@ -194,46 +201,69 @@
                 };
             });
 
-            const firstWeek = Object.values(weeksData)[0];
-            return {
-                year: firstWeek.year,
-                mainMonth: firstWeek.month === 4 ? 5 : firstWeek.month,
-                weeks: Object.values(weeksData)
-            };
+            // Convertir el objeto de semanas a un array
+            for (const year in data) {
+                for (const month in data[year]) {
+                    data[year][month].weeks = Object.values(data[year][month].weeks);
+                }
+            }
+            return data;
         }
         
         // --- FUNCIONES DE RENDERIZADO Y UI ---
         
         function detectCurrentDateInfo() {
             const today = new Date();
-            menuConfig.weeks.forEach((week, index) => {
-                if (today.getFullYear() === week.year && today.getMonth() === week.month) {
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            
+            if (allMenuData[year] && allMenuData[year][month]) {
+                const monthData = allMenuData[year][month];
+                monthData.weeks.forEach((week, index) => {
                     const currentDate = today.getDate();
                     const dayNames = Object.keys(week.days);
                     const weekEndDate = week.startDay + dayNames.length - 1;
                     if (currentDate >= week.startDay && currentDate <= weekEndDate) {
-                        state.todayInfo.weekIndex = index;
-                        const dayIndex = currentDate - week.startDay;
-                        if (dayIndex >= 0 && dayIndex < dayNames.length) {
-                            state.todayInfo.dayName = dayNames[dayIndex];
-                        }
+                        state.todayInfo = { year, month, weekIndex: index, dayName: dayNames[currentDate - week.startDay] };
                     }
-                }
-            });
-            if (state.todayInfo.weekIndex !== null) {
-                state.currentWeekIndex = state.todayInfo.weekIndex;
+                });
             }
         }
 
-        function renderWeekSelectors() {
+        function renderMonth(date) {
+            const year = date.getFullYear();
+            const month = date.getMonth();
+
+            const monthData = allMenuData[year] && allMenuData[year][month];
+
+            document.getElementById('menu-month-year').textContent = `Menú de ${capitalize(getMonthName(month, year))}`;
+            document.getElementById('calendar-month').innerHTML = `<i class="far fa-calendar-alt mr-3"></i> ${capitalize(getMonthName(month, year))}`;
+
+            if (!monthData) {
+                document.getElementById('calendar-container').innerHTML = '';
+                displayError("No hay menú disponible para este mes.");
+                return;
+            }
+
+            if (state.todayInfo.year === year && state.todayInfo.month === month) {
+                state.currentWeekIndex = state.todayInfo.weekIndex;
+            } else {
+                state.currentWeekIndex = 0;
+            }
+            
+            renderWeekSelectors(monthData.weeks);
+            renderMenuCards(monthData.weeks);
+        }
+
+        function renderWeekSelectors(weeks) {
             const calendarContainer = document.getElementById('calendar-container');
             calendarContainer.innerHTML = '';
-            menuConfig.weeks.forEach((week, index) => {
+            weeks.forEach((week, index) => {
                 const weekButton = document.createElement('div');
                 const isActive = index === state.currentWeekIndex;
                 const dayNames = Object.keys(week.days);
                 const endDate = week.startDay + dayNames.length - 1;
-                const monthName = getMonthName(week.month);
+                const monthName = getMonthName(week.month, week.year);
                 weekButton.className = `flex-1 p-4 text-center cursor-pointer transition-all duration-300 rounded-lg ${isActive ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg' : 'bg-white border border-gray-200 shadow-sm hover:bg-cyan-50 text-gray-700 hover:shadow-lg'}`;
                 weekButton.innerHTML = `<h3 class="font-bold text-lg mb-1">${week.weekLabel}</h3><p class="text-sm opacity-90">Del ${week.startDay} al ${endDate} de ${monthName}</p>`;
                 weekButton.onclick = () => selectWeek(index);
@@ -243,21 +273,24 @@
         
         function selectWeek(weekIndex) {
             state.currentWeekIndex = weekIndex;
-            renderWeekSelectors();
-            renderMenuCards();
+            const year = state.displayDate.getFullYear();
+            const month = state.displayDate.getMonth();
+            const monthData = allMenuData[year][month];
+            renderWeekSelectors(monthData.weeks);
+            renderMenuCards(monthData.weeks);
         }
 
-        function renderMenuCards() {
+        function renderMenuCards(weeks) {
             const container = document.getElementById('menu-container');
             container.innerHTML = '';
-            const weekData = menuConfig.weeks[state.currentWeekIndex];
+            const weekData = weeks[state.currentWeekIndex];
             const dayEntries = Object.entries(weekData.days);
 
             dayEntries.forEach(([dayName, dayData], index) => {
                 const card = document.createElement('div');
-                const isToday = state.todayInfo.weekIndex === state.currentWeekIndex && state.todayInfo.dayName === dayName;
+                const isToday = state.todayInfo.year === weekData.year && state.todayInfo.month === weekData.month && state.todayInfo.weekIndex === state.currentWeekIndex && state.todayInfo.dayName === dayName;
                 const dateOfMonth = weekData.startDay + index;
-                const monthName = getMonthName(weekData.month);
+                const monthName = getMonthName(weekData.month, weekData.year);
 
                 let cardClasses = 'menu-card rounded-2xl p-6 transition-all duration-300 card-enter flex flex-col ';
                 if (dayData.isHoliday) {
@@ -316,7 +349,7 @@
             const modalContent = document.getElementById('modal-content');
             const modalTitle = document.getElementById('modal-title');
             const modalBody = document.getElementById('modal-body');
-            const dayData = menuConfig.weeks[state.currentWeekIndex].days[dayName];
+            const dayData = allMenuData[state.displayDate.getFullYear()][state.displayDate.getMonth()].weeks[state.currentWeekIndex].days[dayName];
             
             modalTitle.innerHTML = `📊 ${dayName} - Información Nutricional`;
             const nutritionParts = dayData.nutrition.split(';').map(part => part.trim());
@@ -359,8 +392,8 @@
         }
 
         // --- FUNCIONES AUXILIARES ---
-        function getMonthName(monthIndex) {
-            return new Date(menuConfig.year, monthIndex).toLocaleString('es-ES', { month: 'long' });
+        function getMonthName(monthIndex, year) {
+            return new Date(year, monthIndex).toLocaleString('es-ES', { month: 'long', year: 'numeric' });
         }
         
         function capitalize(s) {
@@ -372,13 +405,21 @@
             const dataLoaded = await loadMenuData();
             if (!dataLoaded) return;
 
-            const monthName = capitalize(getMonthName(menuConfig.mainMonth));
-            document.getElementById('menu-month-year').textContent = `Menú de ${monthName} ${menuConfig.year}`;
-            document.getElementById('calendar-month').innerHTML = `<i class="far fa-calendar-alt mr-3"></i>${monthName}`;
-            
             detectCurrentDateInfo();
-            renderWeekSelectors();
-            renderMenuCards();
+            renderMonth(state.displayDate);
+
+            document.getElementById('prev-month-btn').onclick = () => {
+                state.displayDate.setMonth(state.displayDate.getMonth() - 1);
+                renderMonth(state.displayDate);
+            };
+            document.getElementById('next-month-btn').onclick = () => {
+                state.displayDate.setMonth(state.displayDate.getMonth() + 1);
+                renderMonth(state.displayDate);
+            };
+            document.getElementById('today-btn').onclick = () => {
+                state.displayDate = new Date();
+                renderMonth(state.displayDate);
+            };
 
             document.getElementById('close-modal-btn').onclick = closeModal;
             document.getElementById('nutrition-modal').onclick = (e) => {
