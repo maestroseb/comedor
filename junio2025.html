@@ -163,10 +163,11 @@
             const weeksData = {};
 
             rows.forEach(row => {
-                const columns = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
-                const safeColumns = columns.map(field => (field || "").replace(/"/g, '').trim());
+                // CORREGIDO: Se utiliza una expresión regular más robusta para parsear el CSV
+                const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
 
-                const [dateStr, weekLabel, dayName, meals, dessert, nutrition, icon, specialNotes = ''] = safeColumns;
+                const [dateStr, weekLabel, dayName, specialNotes = '', meals, dessert, nutrition, icon] = safeColumns;
                 
                 if (!dateStr || !weekLabel || !dayName) return;
 
