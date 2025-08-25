@@ -62,7 +62,7 @@
                 <div class="text-center order-first md:order-2">
                     <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-cyan-700 font-brand">🍽️ Comedor Escolar</h1>
                     <h2 class="text-lg md:text-xl lg:text-2xl font-semibold text-gray-600 mt-1">CEIP Carlos III de La Carlota</h2>
-                    <p id="menu-month-year" class="text-md md:text-lg lg:text-xl text-gray-500 mt-2"></p>
+                    <p id="menu-month-year" class="text-md md:text-lg lg:text-xl text-gray-500 mt-2 h-8"></p>
                 </div>
                 <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/junta.png" 
                      alt="Logo Junta de Andalucía" 
@@ -137,9 +137,9 @@
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyua5eFZ5z974Y_x0mIY7AvLRBEM4aaa_p69r9G4VXHP7NYilGJG4vfzwoYedMEmT_MLgEIVCCpZ/pub?output=csv";
 
         // --- ESTADO DE LA APLICACIÓN ---
-        let allMenuData = {}; // Almacenará todos los datos por año y mes
+        let allMenuData = {};
         let state = {
-            displayDate: new Date(), // Fecha que el usuario está viendo
+            displayDate: new Date(),
             currentWeekIndex: 0,
             todayInfo: { year: null, month: null, weekIndex: null, dayName: null }
         };
@@ -167,7 +167,6 @@
             rows.forEach(row => {
                 const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
-
                 const [dateStr, weekLabel, dayName, specialNotes = '', meals, dessert, nutrition, icon] = safeColumns;
                 
                 if (!dateStr || !weekLabel || !dayName) return;
@@ -202,7 +201,6 @@
                 };
             });
 
-            // Convertir el objeto de semanas a un array
             for (const year in data) {
                 for (const month in data[year]) {
                     data[year][month].weeks = Object.values(data[year][month].weeks);
@@ -234,10 +232,10 @@
         function renderMonth(date) {
             const year = date.getFullYear();
             const month = date.getMonth();
-
             const monthData = allMenuData[year] && allMenuData[year][month];
-
-            document.getElementById('menu-month-year').textContent = `Menú de ${capitalize(getMonthName(month, year))}`;
+            
+            // CORREGIDO: Se elimina la actualización del mes en la cabecera principal
+            document.getElementById('menu-month-year').textContent = ''; 
             document.getElementById('calendar-month').innerHTML = `<i class="far fa-calendar-alt mr-3"></i> ${capitalize(getMonthName(month, year))}`;
 
             if (!monthData) {
@@ -253,7 +251,7 @@
             }
             
             renderWeekSelectors(monthData.weeks);
-            renderMenuCards(monthData.weeks);
+            renderMenuCards(monthData.weeks[state.currentWeekIndex]);
         }
 
         function renderWeekSelectors(weeks) {
@@ -278,18 +276,18 @@
             const month = state.displayDate.getMonth();
             const monthData = allMenuData[year][month];
             renderWeekSelectors(monthData.weeks);
-            renderMenuCards(monthData.weeks);
+            renderMenuCards(monthData.weeks[weekIndex]);
         }
 
-        function renderMenuCards(weeks) {
+        function renderMenuCards(weekData) {
             const container = document.getElementById('menu-container');
             container.innerHTML = '';
-            const weekData = weeks[state.currentWeekIndex];
+            
             const dayEntries = Object.entries(weekData.days);
 
             dayEntries.forEach(([dayName, dayData], index) => {
                 const card = document.createElement('div');
-                const isToday = state.todayInfo.year === weekData.year && state.todayInfo.month === weekData.month && state.todayInfo.weekIndex === state.currentWeekIndex && state.todayInfo.dayName === dayName;
+                const isToday = state.todayInfo.year === weekData.year && state.todayInfo.month === weekData.month && state.todayInfo.weekIndex === allMenuData[weekData.year][weekData.month].weeks.findIndex(w => w.weekLabel === weekData.weekLabel) && state.todayInfo.dayName === dayName;
                 const dateOfMonth = weekData.startDay + index;
                 const monthName = getMonthName(weekData.month, weekData.year);
 
@@ -305,7 +303,7 @@
                 }
                 card.className = cardClasses;
 
-                setTimeout(() => card.classList.add('card-enter-active'), index * 100);
+                setTimeout(() => card.classList.add('card-enter-active'), index * 50);
 
                 let cardHTML = `
                     <div class="text-center mb-4">
