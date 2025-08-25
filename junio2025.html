@@ -47,6 +47,39 @@
         #loading-state {
             min-height: 300px;
         }
+
+        /* Estilos de Impresión */
+        @media print {
+            body {
+                background: none;
+                font-size: 10pt;
+            }
+            header, footer, #nutrition-modal, .print-hidden {
+                display: none;
+            }
+            .container {
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            #menu-container {
+                display: block;
+            }
+            .menu-card {
+                box-shadow: none !important;
+                border: 1px solid #ccc;
+                page-break-inside: avoid;
+                margin-bottom: 1rem;
+            }
+            .bg-white.rounded-2xl {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            #calendar-month {
+                text-align: center;
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body class="text-gray-800">
@@ -84,12 +117,13 @@
         <!-- Calendar Week Selector -->
         <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6 mb-10">
             <div class="flex items-center justify-between mb-4 px-2 gap-2">
-                <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0"><i class="fas fa-chevron-left"></i></button>
+                <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0 print-hidden"><i class="fas fa-chevron-left"></i></button>
                 <h2 id="calendar-month" class="text-xl sm:text-2xl font-bold text-cyan-800 text-center flex-grow"></h2>
-                <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0"><i class="fas fa-chevron-right"></i></button>
-                <button id="today-btn" class="ml-2 px-3 py-2 sm:px-4 text-sm sm:text-base bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors shadow-sm flex-shrink-0">Hoy</button>
+                <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors flex-shrink-0 print-hidden"><i class="fas fa-chevron-right"></i></button>
+                <button id="today-btn" class="ml-2 px-3 py-2 sm:px-4 text-sm sm:text-base bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors shadow-sm flex-shrink-0 print-hidden">Hoy</button>
+                <button id="print-btn" class="ml-2 px-3 py-2 sm:px-4 text-sm sm:text-base bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors shadow-sm flex-shrink-0 print-hidden"><i class="fas fa-print mr-2"></i>Imprimir</button>
             </div>
-            <div id="calendar-container" class="flex flex-col sm:flex-row gap-2 rounded-lg bg-gray-50 p-2">
+            <div id="calendar-container" class="flex flex-col sm:flex-row gap-2 rounded-lg bg-gray-50 p-2 print-hidden">
                 <!-- Calendar weeks will be inserted here by JS -->
             </div>
         </div>
@@ -137,9 +171,9 @@
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyua5eFZ5z974Y_x0mIY7AvLRBEM4aaa_p69r9G4VXHP7NYilGJG4vfzwoYedMEmT_MLgEIVCCpZ/pub?output=csv";
 
         // --- ESTADO DE LA APLICACIÓN ---
-        let allMenuData = {}; // Almacenará todos los datos por año y mes
+        let allMenuData = {};
         let state = {
-            displayDate: new Date(), // Fecha que el usuario está viendo
+            displayDate: new Date(),
             currentWeekIndex: 0,
             todayInfo: { year: null, month: null, weekIndex: null, dayName: null }
         };
@@ -167,7 +201,6 @@
             rows.forEach(row => {
                 const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
-
                 const [dateStr, weekLabel, dayName, specialNotes = '', meals, dessert, nutrition, icon] = safeColumns;
                 
                 if (!dateStr || !weekLabel || !dayName) return;
@@ -202,7 +235,6 @@
                 };
             });
 
-            // Convertir el objeto de semanas a un array
             for (const year in data) {
                 for (const month in data[year]) {
                     data[year][month].weeks = Object.values(data[year][month].weeks);
@@ -234,7 +266,6 @@
         function renderMonth(date) {
             const year = date.getFullYear();
             const month = date.getMonth();
-
             const monthData = allMenuData[year] && allMenuData[year][month];
 
             document.getElementById('menu-month-year').textContent = `Menú de ${capitalize(getMonthName(month, year))}`;
@@ -422,6 +453,9 @@
             document.getElementById('today-btn').onclick = () => {
                 state.displayDate = new Date();
                 renderMonth(state.displayDate);
+            };
+            document.getElementById('print-btn').onclick = () => {
+                window.print();
             };
 
             document.getElementById('close-modal-btn').onclick = closeModal;
