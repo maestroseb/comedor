@@ -163,7 +163,6 @@
             const weeksData = {};
 
             rows.forEach(row => {
-                // CORREGIDO: Se utiliza una expresión regular más robusta para parsear el CSV
                 const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                 const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
 
@@ -264,7 +263,7 @@
                 if (dayData.isHoliday) {
                     cardClasses += 'bg-gray-100 border-2 border-dashed border-gray-300 shadow-inner opacity-60';
                 } else if (dayData.isSpecial) {
-                    cardClasses += 'bg-yellow-50 border-2 border-dashed border-yellow-300 shadow-inner';
+                    cardClasses += 'bg-green-50 border-2 border-dashed border-green-300 shadow-inner';
                 } else if (isToday) {
                     cardClasses += 'bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-orange-300 shadow-xl';
                 } else {
@@ -277,9 +276,11 @@
                 let cardHTML = `
                     <div class="text-center mb-4">
                         <div class="text-4xl mb-2">${dayData.icon}</div>
-                        <h3 class="text-xl font-bold ${dayData.isHoliday ? 'text-gray-500' : (dayData.isSpecial ? 'text-yellow-800' : 'text-cyan-800')}">${dayName}${isToday ? ' 🌟' : ''}</h3>
-                        ${isToday ? '<p class="text-xs text-orange-600 font-semibold">¡HOY!</p>' : ''}
-                        <p class="text-sm text-gray-500 font-medium">${dateOfMonth} de ${monthName}</p>
+                        <h3 class="text-xl font-bold ${dayData.isHoliday ? 'text-gray-500' : (dayData.isSpecial ? 'text-green-800' : 'text-cyan-800')}">${dayName}</h3>
+                        <p class="text-sm text-gray-500 font-medium h-5 flex justify-center items-center">
+                            ${dateOfMonth} de ${monthName}
+                            ${isToday ? '<span class="ml-2 text-orange-600 font-semibold">¡HOY!</span>' : ''}
+                        </p>
                     </div>
                     <div class="space-y-3 flex-grow">
                 `;
