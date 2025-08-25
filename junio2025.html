@@ -43,6 +43,10 @@
             transform: translateY(-5px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
+        /* Estilo para el estado de carga */
+        #loading-state {
+            min-height: 300px;
+        }
     </style>
 </head>
 <body class="text-gray-800">
@@ -51,27 +55,19 @@
         <!-- Header -->
         <header class="text-center mb-10">
             <div class="bg-white rounded-3xl shadow-lg p-6 sm:p-8 flex flex-col md:flex-row items-center justify-center md:justify-between gap-4 sm:gap-6">
-                
-                <!-- Logo Colegio (Visible en pantallas medianas y grandes) -->
                 <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/comedorcarlosiii.png" 
                      alt="Logo CEIP Carlos III" 
                      class="hidden md:block h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 xl:h-48 xl:w-48 object-contain md:order-1"
                      onerror="this.style.display='none'">
-
-                <!-- Títulos Centrados -->
                 <div class="text-center order-first md:order-2">
                     <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-cyan-700 font-brand">🍽️ Comedor Escolar</h1>
                     <h2 class="text-lg md:text-xl lg:text-2xl font-semibold text-gray-600 mt-1">CEIP Carlos III de La Carlota</h2>
                     <p id="menu-month-year" class="text-md md:text-lg lg:text-xl text-gray-500 mt-2"></p>
                 </div>
-
-                <!-- Logo Junta de Andalucía (Visible en pantallas medianas y grandes) -->
                 <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/junta.png" 
                      alt="Logo Junta de Andalucía" 
                      class="hidden md:block h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 xl:h-48 xl:w-48 object-contain md:order-3"
                      onerror="this.style.display='none'">
-
-                <!-- Contenedor de Logos para Móvil (Visible solo en móvil) -->
                 <div class="flex md:hidden justify-center items-center gap-8 mt-4 order-last">
                     <img src="https://cdn.jsdelivr.net/gh/maestroseb/comedor@main/comedorcarlosiii.png" 
                          alt="Logo CEIP Carlos III" 
@@ -82,7 +78,6 @@
                          class="h-20 w-20 object-contain"
                          onerror="this.style.display='none'">
                 </div>
-
             </div>
         </header>
 
@@ -100,7 +95,12 @@
 
         <!-- Menu Container -->
         <div id="menu-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-            <!-- Menu cards will be inserted here -->
+            <!-- Loading/Error State -->
+            <div id="loading-state" class="col-span-full flex items-center justify-center p-10 bg-gray-50 rounded-lg">
+                <p class="text-lg text-gray-500 font-semibold animate-pulse">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>Cargando menú...
+                </p>
+            </div>
         </div>
 
         <!-- Important Note Footer -->
@@ -124,9 +124,7 @@
                 <i class="fas fa-times fa-2x"></i>
             </button>
             <h3 class="text-2xl font-bold text-cyan-800 mb-4" id="modal-title">📊 Información Nutricional</h3>
-            <div id="modal-body" class="text-gray-600">
-                <!-- Nutrition details will be inserted here -->
-            </div>
+            <div id="modal-body" class="text-gray-600"></div>
             <div class="mt-6 p-4 bg-blue-50 rounded-lg">
                 <p class="text-sm text-blue-800"><i class="fas fa-info-circle mr-2"></i>Valores nutricionales aproximados por ración.</p>
             </div>
@@ -134,85 +132,90 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN DEL MENÚ ---
-        const menuConfig = {
-            year: 2025,
-            mainMonth: 5, // 0 = Enero, ..., 4 = Mayo, 5 = Junio
-            weeks: [
-                {
-                    weekLabel: "Semana 1",
-                    month: 4, // Mayo
-                    startDay: 26,
-                    days: {
-                        "Lunes": { meals: ["Arroz con tomate, cebolla y pimiento rojo", "Tortilla francesa con queso y ensalada de lechuga, tomate y zanahoria", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2510KJ/600Kcal; Grasas: 30.4g; de las cuales saturadas: 8.3g; Hidratos de carbono: 58.9g; de los cuales azúcares: 16.9g; Proteínas: 24.1g; Sal: 2.5g", icon: "🍚" },
-                        "Martes": { meals: ["Cocido de garbanzos con patata y zanahoria", "Caballa y picadillo de tomate", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2440KJ/583Kcal; Grasas: 28.5g; de las cuales saturadas: 5.6g; Hidratos de carbono: 74.3g; de los cuales azúcares: 19.7g; Proteínas: 21.9g; Sal: 2.3g", icon: "🍲" },
-                        "Miércoles": { meals: ["Salmorejo de tomate con huevo duro y jamón", "Tortilla de patata y ensalada", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2517KJ/602Kcal; Grasas: 38.1g; de las cuales saturadas: 6.8g; Hidratos de carbono: 58.5g; de los cuales azúcares: 12g; Proteínas: 17.9g; Sal: 2.3g", icon: "🍅" },
-                        "Jueves": { meals: ["Crema de zanahoria, patata, cebolla y puerro", "Pechuga de pollo con ensalada", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2521KJ/603Kcal; Grasas: 27.5g; de las cuales saturadas: 4.1g; Hidratos de carbono: 68.2g; de los cuales azúcares: 18.2g; Proteínas: 22.9g; Sal: 2.7g", icon: "🥕" },
-                        "Viernes": { meals: ["Ensalada de pasta, zanahoria y maíz", "Tortilla de calabacín", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2822KJ/675Kcal; Grasas: 29.8g; de las cuales saturadas: 8.1g; Hidratos de carbono: 69.7g; de los cuales azúcares: 18.2g; Proteínas: 18.2g; Sal: 2.4g", icon: "🍝" }
-                    }
-                },
-                {
-                    weekLabel: "Semana 2",
-                    month: 5, // Junio
-                    startDay: 2,
-                    days: {
-                        "Lunes": { meals: ["Crema de calabaza, patata y puerro", "Albóndigas de pollo en salsa y patatas fritas", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2621KJ/627Kcal; Grasas: 28.9g; de las cuales saturadas: 4.7g; Hidratos de carbono: 63.5g; de los cuales azúcares: 17.3g; Proteínas: 19.3g; Sal: 2.2g", icon: "🥣" },
-                        "Martes": { meals: ["Ensaladilla de patata, huevo duro, zanahoria, atún y mahonesa", "Merluza en salsa al horno y ensalada de pico", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2420KJ/580Kcal; Grasas: 27.5g; de las cuales saturadas: 5.8g; Hidratos de carbono: 65.4g; de los cuales azúcares: 21.5g; Proteínas: 28.4g; Sal: 2.2g", icon: "🥗" },
-                        "Miércoles": { meals: ["Lentejas guisadas con tomate, patata, pimiento, zanahoria, cebolla y chorizo", "Rabas rebozadas y ensalada", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2531KJ/605Kcal; Grasas: 38.1g; de las cuales saturadas: 5.6g; Hidratos de carbono: 60.1g; de los cuales azúcares: 18.2g; Proteínas: 17.5g; Sal: 2.3g", icon: "🍲" },
-                        "Jueves": { meals: ["Arroz a la cubana con tomate frito", "Tortilla francesa y ensalada de lechuga, tomate y pepino", "Pan integral"], dessert: "Yogur", nutrition: "Valor energético: 2521KJ/603Kcal; Grasas: 40.1g; de las cuales saturadas: 5.9g; Hidratos de carbono: 62.1g; de los cuales azúcares: 17.5g; Proteínas: 15.3g; Sal: 2.1g", icon: "🍚" },
-                        "Viernes": { meals: ["Pasta con pollo y salsa de tomate", "Ensalada de lechuga, tomate, maíz, zanahoria, atún y queso fresco", "Pan blanco"], dessert: "Yogur", nutrition: "Valor energético: 2822KJ/675Kcal; Grasas: 26.8g; de las cuales saturadas: 14.3g; Hidratos de carbono: 69.7g; de los cuales azúcares: 18.2g; Proteínas: 18.2g; Sal: 2.4g", icon: "🍝" }
-                    }
-                },
-                {
-                    weekLabel: "Semana 3",
-                    month: 5, // Junio
-                    startDay: 9,
-                    days: {
-                        "Lunes": { meals: ["Sopa de estrellitas", "Huevos rellenos de atún y tomate y ensalada de lechuga", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2517KJ/602Kcal; Grasas: 30.1g; de las cuales saturadas: 4.1g; Hidratos de carbono: 65.5g; de los cuales azúcares: 18g; Proteínas: 15.1g; Sal: 2.3g", icon: "🍜" },
-                        "Martes": { meals: ["Arroz con zanahoria, champiñones, calabacín, cebolla y pimiento", "Hamburguesa de pollo a la plancha y ensalada", "Pan integral"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2410KJ/577Kcal; Grasas: 31.2g; de las cuales saturadas: 3.9g; Hidratos de carbono: 68.5g; de los cuales azúcares: 18g; Proteínas: 16.1g; Sal: 2.1g", icon: "🍚" },
-                        "Miércoles": { meals: ["Ensalada de pasta, lechuga, tomate, atún, zanahoria y maíz", "Muslo de pollo en salsa y ensalada", "Pan blanco"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2610KJ/624Kcal; Grasas: 28.4g; de las cuales saturadas: 5.9g; Hidratos de carbono: 68.5g; de los cuales azúcares: 18g; Proteínas: 16.2g; Sal: 2.1g", icon: "🍝" },
-                        "Jueves": { meals: ["Crema de calabacín, patata, cebolla y puerro", "Revuelto de patatas con huevo y ensalada de lechuga y pepino", "Pan integral"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2617KJ/626Kcal; Grasas: 38.2g; de las cuales saturadas: 3.8g; Hidratos de carbono: 69.5g; de los cuales azúcares: 19g; Proteínas: 17.1g; Sal: 2.8g", icon: "🥣" },
-                        "Viernes": { meals: ["Cocido de garbanzos con patata y zanahoria", "Ensalada de lechuga, tomate, maíz, zanahoria, atún y queso fresco", "Pan blanco"], dessert: "Yogur", nutrition: "Valor energético: 2822KJ/675Kcal; Grasas: 26.8g; de las cuales saturadas: 6.9g; Hidratos de carbono: 69.7g; de los cuales azúcares: 18.2g; Proteínas: 18.2g; Sal: 2.4g", icon: "🍲" }
-                    }
-                },
-                {
-                    weekLabel: "Semana 4",
-                    month: 5, // Junio
-                    startDay: 16,
-                    days: {
-                        "Lunes": { meals: ["Sopa de garbanzos y arroz", "Tortilla de calabacín y ensalada de lechuga, tomate y zanahoria", "Pan integral"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2420KJ/580Kcal; Grasas: 27.5g; de las cuales saturadas: 5.8g; Hidratos de carbono: 71.5g; de los cuales azúcares: 21.5g; Proteínas: 24.4g; Sal: 2.5g", icon: "🍲" },
-                        "Martes": { meals: ["Potaje de habichuelas con patata, zanahoria, pimiento y morcilla", "Bacalao a la plancha y ensalada", "Pan integral"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2480KJ/593Kcal; Grasas: 30.1g; de las cuales saturadas: 4.8g; Hidratos de carbono: 71.5g; de los cuales azúcares: 18.7g; Proteínas: 19.1g; Sal: 2.7g", icon: "🍲" },
-                        "Miércoles": { meals: ["Ensaladilla de patata, huevo duro, zanahoria, atún y mahonesa", "Pechuga de pavo a la plancha y ensalada de lechuga, tomate y pepino", "Pan blanco"], dessert: "Yogur", nutrition: "Valor energético: 2460KJ/588Kcal; Grasas: 27.5g; de las cuales saturadas: 4.3g; Hidratos de carbono: 71.5g; de los cuales azúcares: 21.5g; Proteínas: 21.5g; Sal: 2.5g", icon: "🥗" },
-                        "Jueves": { meals: ["Patatas guisadas con carne magra de ternera, tomate, cebolla y pimiento", "Caballa frita con aliño de lechuga y zanahoria", "Pan integral"], dessert: "Fruta fresca de temporada", nutrition: "Valor energético: 2520KJ/603Kcal; Grasas: 27.5g; de las cuales saturadas: 4.1g; Hidratos de carbono: 68.2g; de los cuales azúcares: 18.2g; Proteínas: 22.9g; Sal: 2.7g", icon: "🥔" },
-                        "Viernes": { meals: ["COMIDA ESPECIAL FIN DE CURSO"], dessert: "", nutrition: "", icon: "🎉" }
-                    }
-                }
-            ]
-        };
+        // --- CONFIGURACIÓN GLOBAL ---
+        const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyua5eFZ5z974Y_x0mIY7AvLRBEM4aaa_p69r9G4VXHP7NYilGJG4vfzwoYedMEmT_MLgEIVCCpZ/pub?output=csv";
 
         // --- ESTADO DE LA APLICACIÓN ---
+        let menuConfig = null;
         let state = {
             currentWeekIndex: 0,
-            todayInfo: {
-                weekIndex: null,
-                dayName: null,
-            }
+            todayInfo: { weekIndex: null, dayName: null }
         };
 
-        // --- FUNCIONES PRINCIPALES ---
+        // --- FUNCIONES DE CARGA Y PROCESAMIENTO DE DATOS ---
 
+        async function loadMenuData() {
+            try {
+                const response = await fetch(GOOGLE_SHEET_URL + '&t=' + new Date().getTime());
+                if (!response.ok) throw new Error('No se pudo cargar la hoja de cálculo.');
+                const csvText = await response.text();
+                menuConfig = parseCSVToMenuConfig(csvText);
+                return true;
+            } catch (error) {
+                console.error("Error al cargar el menú:", error);
+                displayError("No se ha podido cargar el menú. Asegúrate de que la hoja de cálculo está 'Publicada en la web'.");
+                return false;
+            }
+        }
+
+        function parseCSVToMenuConfig(csvText) {
+            const rows = csvText.split('\n').slice(1);
+            const weeksData = {};
+
+            rows.forEach(row => {
+                const columns = row.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+                const safeColumns = columns.map(field => (field || "").replace(/"/g, '').trim());
+
+                const [dateStr, weekLabel, dayName, meals, dessert, nutrition, icon, specialNotes = ''] = safeColumns;
+                
+                if (!dateStr || !weekLabel || !dayName) return;
+
+                if (!weeksData[weekLabel]) {
+                    const [day, month, year] = dateStr.split('/');
+                    weeksData[weekLabel] = {
+                        weekLabel,
+                        month: parseInt(month, 10) - 1,
+                        startDay: parseInt(day, 10),
+                        year: parseInt(year, 10),
+                        days: {}
+                    };
+                }
+                
+                const isHoliday = specialNotes.toLowerCase().includes('no lectivo');
+                const isSpecialEvent = specialNotes && !isHoliday;
+
+                weeksData[weekLabel].days[dayName] = {
+                    meals: specialNotes ? [specialNotes] : (meals ? meals.split(';').map(m => m.trim()) : []),
+                    dessert: dessert || "",
+                    nutrition: nutrition || "",
+                    icon: icon || "🍽️",
+                    isSpecial: isSpecialEvent,
+                    isHoliday: isHoliday
+                };
+            });
+
+            const firstWeek = Object.values(weeksData)[0];
+            return {
+                year: firstWeek.year,
+                mainMonth: firstWeek.month === 4 ? 5 : firstWeek.month,
+                weeks: Object.values(weeksData)
+            };
+        }
+        
+        // --- FUNCIONES DE RENDERIZADO Y UI ---
+        
         function detectCurrentDateInfo() {
             const today = new Date();
             menuConfig.weeks.forEach((week, index) => {
-                if (today.getFullYear() === menuConfig.year && today.getMonth() === week.month) {
+                if (today.getFullYear() === week.year && today.getMonth() === week.month) {
                     const currentDate = today.getDate();
                     const dayNames = Object.keys(week.days);
                     const weekEndDate = week.startDay + dayNames.length - 1;
                     if (currentDate >= week.startDay && currentDate <= weekEndDate) {
                         state.todayInfo.weekIndex = index;
                         const dayIndex = currentDate - week.startDay;
-                        if(dayIndex >= 0 && dayIndex < dayNames.length) {
-                             state.todayInfo.dayName = dayNames[dayIndex];
+                        if (dayIndex >= 0 && dayIndex < dayNames.length) {
+                            state.todayInfo.dayName = dayNames[dayIndex];
                         }
                     }
                 }
@@ -231,11 +234,7 @@
                 const dayNames = Object.keys(week.days);
                 const endDate = week.startDay + dayNames.length - 1;
                 const monthName = getMonthName(week.month);
-                weekButton.className = `flex-1 p-4 text-center cursor-pointer transition-all duration-300 rounded-lg ${
-                    isActive 
-                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg' 
-                        : 'bg-white border border-gray-200 shadow-sm hover:bg-cyan-50 text-gray-700 hover:shadow-lg'
-                }`;
+                weekButton.className = `flex-1 p-4 text-center cursor-pointer transition-all duration-300 rounded-lg ${isActive ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg' : 'bg-white border border-gray-200 shadow-sm hover:bg-cyan-50 text-gray-700 hover:shadow-lg'}`;
                 weekButton.innerHTML = `<h3 class="font-bold text-lg mb-1">${week.weekLabel}</h3><p class="text-sm opacity-90">Del ${week.startDay} al ${endDate} de ${monthName}</p>`;
                 weekButton.onclick = () => selectWeek(index);
                 calendarContainer.appendChild(weekButton);
@@ -259,11 +258,12 @@
                 const isToday = state.todayInfo.weekIndex === state.currentWeekIndex && state.todayInfo.dayName === dayName;
                 const dateOfMonth = weekData.startDay + index;
                 const monthName = getMonthName(weekData.month);
-                const isClosed = dayData.closed === true;
 
                 let cardClasses = 'menu-card rounded-2xl p-6 transition-all duration-300 card-enter flex flex-col ';
-                 if (isClosed) {
-                    cardClasses += 'bg-gray-100 border-2 border-dashed border-gray-300 shadow-inner opacity-70';
+                if (dayData.isHoliday) {
+                    cardClasses += 'bg-gray-100 border-2 border-dashed border-gray-300 shadow-inner opacity-60';
+                } else if (dayData.isSpecial) {
+                    cardClasses += 'bg-yellow-50 border-2 border-dashed border-yellow-300 shadow-inner';
                 } else if (isToday) {
                     cardClasses += 'bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-orange-300 shadow-xl';
                 } else {
@@ -276,31 +276,21 @@
                 let cardHTML = `
                     <div class="text-center mb-4">
                         <div class="text-4xl mb-2">${dayData.icon}</div>
-                        <h3 class="text-xl font-bold ${isClosed ? 'text-gray-600' : 'text-cyan-800'}">${dayName}${isToday ? ' 🌟' : ''}</h3>
+                        <h3 class="text-xl font-bold ${dayData.isHoliday ? 'text-gray-500' : (dayData.isSpecial ? 'text-yellow-800' : 'text-cyan-800')}">${dayName}${isToday ? ' 🌟' : ''}</h3>
                         ${isToday ? '<p class="text-xs text-orange-600 font-semibold">¡HOY!</p>' : ''}
                         <p class="text-sm text-gray-500 font-medium">${dateOfMonth} de ${monthName}</p>
                     </div>
                     <div class="space-y-3 flex-grow">
                 `;
 
-                if (isClosed) {
-                     cardHTML += `
-                        <div class="text-center flex-grow flex items-center justify-center">
-                             <h4 class="font-semibold text-gray-700 text-lg">${dayData.reason}</h4>
-                        </div>
-                     `;
-                } else if (dayData.dessert === "" && dayData.nutrition === "") {
-                     cardHTML += `
-                        <div class="text-center flex-grow flex items-center justify-center">
-                             <h4 class="font-semibold text-gray-700 text-lg">${dayData.meals[0]}</h4>
-                        </div>
-                     `;
+                if (dayData.isHoliday || dayData.isSpecial) {
+                     cardHTML += `<div class="text-center flex-grow flex items-center justify-center"><h4 class="font-semibold text-gray-700 text-lg">${dayData.meals[0]}</h4></div>`;
                 } else {
                     cardHTML += `
                         <div>
                             <h4 class="font-semibold text-gray-700 mb-2 flex items-center"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos:</h4>
                             <ul class="text-sm text-gray-600 space-y-1 pl-1">
-                                ${dayData.meals.map(meal => `<li class="flex items-start"><span class="text-green-500 mr-2">•</span>${meal.replace('2º ', '')}</li>`).join('')}
+                                ${dayData.meals.map(meal => `<li class="flex items-start"><span class="text-green-500 mr-2">•</span>${meal}</li>`).join('')}
                             </ul>
                         </div>
                         <div>
@@ -309,17 +299,11 @@
                         </div>
                     `;
                 }
-                
                 cardHTML += '</div>';
 
                 if (dayData.nutrition) {
-                    cardHTML += `
-                        <button onclick="showNutritionModal('${dayName}')" class="mt-4 w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-2 px-4 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 font-semibold">
-                            <i class="fas fa-chart-pie mr-2"></i>Info Nutricional
-                        </button>
-                    `;
+                    cardHTML += `<button onclick="showNutritionModal('${dayName}')" class="mt-4 w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-2 px-4 rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 font-semibold"><i class="fas fa-chart-pie mr-2"></i>Info Nutricional</button>`;
                 }
-
                 card.innerHTML = cardHTML;
                 container.appendChild(card);
             });
@@ -340,7 +324,7 @@
                     <div class="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg">
                         <h4 class="font-semibold text-cyan-800 mb-3 flex items-center"><span class="text-2xl mr-2">${dayData.icon}</span>Menú del día</h4>
                         <div class="space-y-2 text-sm">
-                            ${dayData.meals.map(meal => `<p class="flex items-start"><span class="text-green-500 mr-2">•</span>${meal.replace('2º ', '')}</p>`).join('')}
+                            ${dayData.meals.map(meal => `<p class="flex items-start"><span class="text-green-500 mr-2">•</span>${meal}</p>`).join('')}
                             <p class="flex items-start"><span class="text-pink-500 mr-2">🍨</span><strong>Postre:</strong> ${dayData.dessert}</p>
                         </div>
                     </div>
@@ -349,10 +333,7 @@
                         <div class="grid grid-cols-1 gap-2 text-sm">
                             ${nutritionParts.map(part => {
                                 const [key, value] = part.split(':');
-                                return `<div class="flex justify-between py-1 border-b border-green-200">
-                                    <span class="font-medium text-gray-700">${key.trim()}</span>
-                                    <span class="text-green-700 font-semibold">${value ? value.trim() : ''}</span>
-                                </div>`;
+                                return `<div class="flex justify-between py-1 border-b border-green-200"><span class="font-medium text-gray-700">${key.trim()}</span><span class="text-green-700 font-semibold">${value ? value.trim() : ''}</span></div>`;
                             }).join('')}
                         </div>
                     </div>
@@ -370,6 +351,11 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
 
+        function displayError(message) {
+            const container = document.getElementById('menu-container');
+            container.innerHTML = `<div id="loading-state" class="col-span-full flex items-center justify-center p-10 bg-red-50 rounded-lg"><p class="text-lg text-red-600 font-semibold"><i class="fas fa-exclamation-triangle mr-2"></i>${message}</p></div>`;
+        }
+
         // --- FUNCIONES AUXILIARES ---
         function getMonthName(monthIndex) {
             return new Date(menuConfig.year, monthIndex).toLocaleString('es-ES', { month: 'long' });
@@ -380,17 +366,18 @@
         }
         
         // --- INICIALIZACIÓN ---
-        function initializeUI() {
+        async function main() {
+            const dataLoaded = await loadMenuData();
+            if (!dataLoaded) return;
+
             const monthName = capitalize(getMonthName(menuConfig.mainMonth));
             document.getElementById('menu-month-year').textContent = `Menú de ${monthName} ${menuConfig.year}`;
             document.getElementById('calendar-month').innerHTML = `<i class="far fa-calendar-alt mr-3"></i>${monthName}`;
-        }
-        
-        function main() {
-            initializeUI();
+            
             detectCurrentDateInfo();
             renderWeekSelectors();
             renderMenuCards();
+
             document.getElementById('close-modal-btn').onclick = closeModal;
             document.getElementById('nutrition-modal').onclick = (e) => {
                 if (e.target.id === 'nutrition-modal') closeModal();
@@ -404,4 +391,3 @@
     </script>
 </body>
 </html>
-
