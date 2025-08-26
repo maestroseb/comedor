@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Menú de Hoy</title>
-	<!-- Tailwind CSS -->
-	<script src="https://cdn.tailwindcss.com"></script>
-	<!-- Google Fonts -->
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
-	<!-- Font Awesome for icons -->
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-	<style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú de Hoy</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
         body {
             font-family: 'Inter', sans-serif;
         }
@@ -23,14 +23,14 @@
 </head>
 <body class="bg-transparent p-4">
 
-	<!-- Contenedor del Widget -->
-	<div id="menu-widget-container" class="max-w-sm mx-auto bg-white rounded-2xl shadow-lg p-6 border-t-4 border-cyan-500">
-		<!-- El contenido se insertará aquí por JavaScript -->
-	</div>
+    <!-- Contenedor del Widget (MODIFICADO PARA SER RESPONSIVE Y MÁS PEQUEÑO) -->
+    <div id="menu-widget-container" class="w-full max-w-xs mx-auto bg-white rounded-2xl shadow-lg p-6 border-t-4 border-cyan-500">
+        <!-- El contenido se insertará aquí por JavaScript -->
+    </div>
 
-	<script>
+    <script>
         // --- CONFIGURACIÓN ---
-const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyua5eFZ5z974Y_x0mIY7AvLRBEM4aaa_p69r9G4VXHP7NYilGJG4vfzwoYedMEmT_MLgEIVCCpZ/pub?output=csv";
+        const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyua5eFZ5z974Y_x0mIY7AvLRBEM4aaa_p69r9G4VXHP7NYilGJG4vfzwoYedMEmT_MLgEIVCCpZ/pub?output=csv";
 
         // --- LÓGICA DEL WIDGET ---
 
@@ -100,14 +100,12 @@ const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyu
                 `;
             }
             
-            // --- INICIO DE LA MODIFICACIÓN ---
             // Añade un enlace opcional al menú completo
             contentHTML += `
                 <div class="text-center mt-6">
                     <a href="https://maestroseb.github.io/comedor/menu.html" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">Ver menú completo &rarr;</a>
                 </div>
             `;
-            // --- FIN DE LA MODIFICACIÓN ---
 
             container.innerHTML = contentHTML;
         }
