@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Menú de Hoy</title>
+	<!-- Tailwind CSS -->
+	<script src="https://cdn.tailwindcss.com"></script>
+	<!-- Google Fonts -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
+	<!-- Font Awesome for icons -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-brand {
+            font-family: 'Pacifico', cursive;
+        }
+    </style>
+</head>
+<body class="bg-transparent p-4">
+
+	<!-- Contenedor del Widget -->
+	<div id="menu-widget-container" class="max-w-sm mx-auto bg-white rounded-2xl shadow-lg p-6 border-t-4 border-cyan-500">
+		<!-- El contenido se insertará aquí por JavaScript -->
+	</div>
+
+	<script>
+        // --- CONFIGURACIÓN ---
+const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyua5eFZ5z974Y_x0mIY7AvLRBEM4aaa_p69r9G4VXHP7NYilGJG4vfzwoYedMEmT_MLgEIVCCpZ/pub?output=csv";
+
+        // --- LÓGICA DEL WIDGET ---
+
+        /**
+         * Formatea una fecha en el formato DD/MM/YYYY
+         * @param {Date} date - El objeto Date a formatear.
+         * @returns {string} - La fecha formateada.
+         */
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        /**
+         * Renderiza el contenido del widget.
+         * @param {object|null} menuData - Los datos del menú de hoy, o null si no hay.
+         */
+        function renderWidget(menuData) {
+            const container = document.getElementById('menu-widget-container');
+            let contentHTML = '';
+
+            if (menuData) {
+                // Si es un día especial o festivo
+                if (menuData.isSpecial || menuData.isHoliday) {
+                    contentHTML = `
+                        <div class="text-center">
+                            <div class="text-5xl mb-3">${menuData.icon}</div>
+                            <h2 class="text-2xl font-bold text-gray-800">Menú de Hoy</h2>
+                            <p class="text-gray-500 mb-4">${menuData.dayName}</p>
+                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                                <p class="font-semibold text-yellow-800">${menuData.meals[0]}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                // Si es un día normal de menú
+                    contentHTML = `
+                        <div class="text-center">
+                            <div class="text-5xl mb-3">${menuData.icon}</div>
+                            <h2 class="text-2xl font-bold text-gray-800">Hoy Comemos</h2>
+                             <p class="text-gray-500 mb-4">${menuData.dayName}</p>
+                        </div>
+                        <div class="space-y-4 mt-4">
+                            <div>
+                                <h3 class="font-semibold text-gray-700 flex items-center"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos</h3>
+                                <ul class="text-sm text-gray-600 space-y-1 mt-1 pl-6">
+                                    ${menuData.meals.map(meal => `<li class="list-disc">${meal}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-700 flex items-center"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre</h3>
+                                <p class="text-sm text-gray-600 mt-1 pl-6">${menuData.dessert}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // Si no hay menú para hoy
+                contentHTML = `
+                    <div class="text-center">
+                        <div class="text-5xl mb-3">🏠</div>
+                        <h2 class="text-2xl font-bold text-gray-800">¡Buen provecho!</h2>
+                        <p class="text-gray-500 mt-2">Hoy no hay servicio de comedor.</p>
+                    </div>
+                `;
+            }
+            
+            // --- INICIO DE LA MODIFICACIÓN ---
+            // Añade un enlace opcional al menú completo
+            contentHTML += `
+                <div class="text-center mt-6">
+                    <a href="https://maestroseb.github.io/comedor/menu.html" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">Ver menú completo &rarr;</a>
+                </div>
+            `;
+            // --- FIN DE LA MODIFICACIÓN ---
+
+            container.innerHTML = contentHTML;
+        }
+
+        /**
+         * Función principal que se ejecuta al cargar la página.
+         */
+        async function main() {
+            const container = document.getElementById('menu-widget-container');
+            container.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Cargando menú de hoy...</p>`;
+
+            try {
+                const response = await fetch(GOOGLE_SHEET_URL + '&t=' + new Date().getTime());
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const csvText = await response.text();
+                const rows = csvText.trim().split(/\r?\n/).slice(1);
+                const todayStr = formatDate(new Date());
+                let todayMenu = null;
+                const dayMap = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+
+                for (const row of rows) {
+                    if (!row || row.trim() === '') continue;
+
+                    const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
+
+                    const mondayDateStr = safeColumns[0];
+                    const dayName = safeColumns[2];
+                    const dayOffset = dayMap.indexOf(dayName);
+
+                    if (dayOffset === -1) continue; // Si no es un día de la semana válido, saltar fila
+
+                    // Parsear la fecha del lunes (DD/MM/YYYY) para crear un objeto Date
+                    const [day, month, year] = mondayDateStr.split('/');
+                    const mondayDate = new Date(`${year}-${month}-${day}T12:00:00Z`);
+
+                    // Calcular la fecha real de la fila sumando el offset al lunes
+                    const actualDate = new Date(mondayDate);
+                    actualDate.setDate(mondayDate.getDate() + dayOffset);
+                    const actualDateStr = formatDate(actualDate);
+                    
+                    // Comparar la fecha calculada con la de hoy
+                    if (actualDateStr === todayStr) {
+                         const specialNotes = safeColumns[3] || '';
+                         const mealsCSV = safeColumns[4] || '';
+                         const dessert = safeColumns[5] || '';
+                         const icon = safeColumns[7] || '🍽️';
+                         
+                         const isHoliday = specialNotes.toLowerCase().includes('no lectivo');
+                         const isSpecialEvent = specialNotes && !isHoliday;
+                         
+                         todayMenu = {
+                            dayName: dayName,
+                            meals: isSpecialEvent || isHoliday ? [specialNotes] : mealsCSV.split(';').map(m => m.trim()),
+                            dessert: dessert,
+                            icon: icon,
+                            isSpecial: isSpecialEvent,
+                            isHoliday: isHoliday
+                         };
+                         break; 
+                    }
+                }
+                
+                renderWidget(todayMenu);
+
+            } catch (error) {
+                console.error("Error al obtener o procesar los datos del menú:", error);
+                container.innerHTML = `<p class="text-center text-red-500">No se pudo cargar el menú.</p>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', main);
+    </script>
+
+</body>
+</html>
