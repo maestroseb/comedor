@@ -47,6 +47,19 @@
         }
 
         /**
+         * Formatea una fecha en el formato "Día, DD Mes YYYY" (sin "de")
+         * @param {Date} date - El objeto Date a formatear.
+         * @returns {string} - La fecha formateada completa.
+         */
+        function formatFullDate(date) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            let formattedDate = date.toLocaleDateString('es-ES', options);
+            // Reemplazamos " de " con un espacio para un formato más compacto
+            formattedDate = formattedDate.replace(/ de /g, ' ');
+            return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+        }
+
+        /**
          * Renderiza el contenido del widget.
          * @param {object|null} menuData - Los datos del menú de hoy, o null si no hay.
          */
@@ -62,7 +75,7 @@
                             <div class="text-4xl">${menuData.icon}</div>
                             <div class="text-left">
                                 <h2 class="text-xl font-bold text-gray-800 leading-tight">Menú de Hoy</h2>
-                                <p class="text-gray-500 text-sm">${menuData.dayName}</p>
+                                <p class="text-gray-500 text-sm">${menuData.fullDate}</p>
                             </div>
                         </div>
                         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
@@ -76,7 +89,7 @@
                             <div class="text-4xl">${menuData.icon}</div>
                             <div class="text-left">
                                 <h2 class="text-xl font-bold text-gray-800 leading-tight">Hoy Comemos</h2>
-                                <p class="text-gray-500 text-sm">${menuData.dayName}</p>
+                                <p class="text-gray-500 text-sm">${menuData.fullDate}</p>
                             </div>
                         </div>
                         <div class="space-y-3 mt-3">
@@ -100,7 +113,7 @@
                         <div class="text-4xl">🏠</div>
                         <div class="text-left">
                             <h2 class="text-xl font-bold text-gray-800 leading-tight">¡Buen provecho!</h2>
-                            <p class="text-gray-500 text-sm">Hoy no hay servicio de comedor.</p>
+                            <p class="text-gray-500 text-sm">${formatFullDate(new Date())}</p>
                         </div>
                     </div>
                 `;
@@ -166,6 +179,7 @@
                          
                          todayMenu = {
                             dayName: dayName,
+                            fullDate: formatFullDate(actualDate),
                             meals: isSpecialEvent || isHoliday ? [specialNotes] : mealsCSV.split(';').map(m => m.trim()),
                             dessert: dessert,
                             icon: icon,
