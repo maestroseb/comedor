@@ -23,8 +23,8 @@
 </head>
 <body class="bg-transparent p-4">
 
-    <!-- Contenedor del Widget (MODIFICADO PARA SER RESPONSIVE Y MÁS PEQUEÑO) -->
-    <div id="menu-widget-container" class="w-full max-w-xs mx-auto bg-white rounded-2xl shadow-lg p-6 border-t-4 border-cyan-500">
+    <!-- Contenedor del Widget -->
+    <div id="menu-widget-container" class="w-full max-w-xs mx-auto bg-white rounded-2xl shadow-lg p-5 border-t-4 border-cyan-500">
         <!-- El contenido se insertará aquí por JavaScript -->
     </div>
 
@@ -58,32 +58,36 @@
                 // Si es un día especial o festivo
                 if (menuData.isSpecial || menuData.isHoliday) {
                     contentHTML = `
-                        <div class="text-center">
-                            <div class="text-5xl mb-3">${menuData.icon}</div>
-                            <h2 class="text-2xl font-bold text-gray-800">Menú de Hoy</h2>
-                            <p class="text-gray-500 mb-4">${menuData.dayName}</p>
-                            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
-                                <p class="font-semibold text-yellow-800">${menuData.meals[0]}</p>
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="text-4xl">${menuData.icon}</div>
+                            <div class="text-left">
+                                <h2 class="text-xl font-bold text-gray-800 leading-tight">Menú de Hoy</h2>
+                                <p class="text-gray-500 text-sm">${menuData.dayName}</p>
                             </div>
+                        </div>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
+                            <p class="font-semibold text-yellow-800 text-sm">${menuData.meals[0]}</p>
                         </div>
                     `;
                 } else {
                 // Si es un día normal de menú
                     contentHTML = `
-                        <div class="text-center">
-                            <div class="text-5xl mb-3">${menuData.icon}</div>
-                            <h2 class="text-2xl font-bold text-gray-800">Hoy Comemos</h2>
-                             <p class="text-gray-500 mb-4">${menuData.dayName}</p>
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="text-4xl">${menuData.icon}</div>
+                            <div class="text-left">
+                                <h2 class="text-xl font-bold text-gray-800 leading-tight">Hoy Comemos</h2>
+                                <p class="text-gray-500 text-sm">${menuData.dayName}</p>
+                            </div>
                         </div>
-                        <div class="space-y-4 mt-4">
+                        <div class="space-y-3 mt-3">
                             <div>
-                                <h3 class="font-semibold text-gray-700 flex items-center"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos</h3>
+                                <h3 class="font-semibold text-gray-700 flex items-center text-base"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos</h3>
                                 <ul class="text-sm text-gray-600 space-y-1 mt-1 pl-6">
                                     ${menuData.meals.map(meal => `<li class="list-disc">${meal}</li>`).join('')}
                                 </ul>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-700 flex items-center"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre</h3>
+                                <h3 class="font-semibold text-gray-700 flex items-center text-base"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre</h3>
                                 <p class="text-sm text-gray-600 mt-1 pl-6">${menuData.dessert}</p>
                             </div>
                         </div>
@@ -92,17 +96,19 @@
             } else {
                 // Si no hay menú para hoy
                 contentHTML = `
-                    <div class="text-center">
-                        <div class="text-5xl mb-3">🏠</div>
-                        <h2 class="text-2xl font-bold text-gray-800">¡Buen provecho!</h2>
-                        <p class="text-gray-500 mt-2">Hoy no hay servicio de comedor.</p>
+                    <div class="flex items-center gap-3">
+                        <div class="text-4xl">🏠</div>
+                        <div class="text-left">
+                            <h2 class="text-xl font-bold text-gray-800 leading-tight">¡Buen provecho!</h2>
+                            <p class="text-gray-500 text-sm">Hoy no hay servicio de comedor.</p>
+                        </div>
                     </div>
                 `;
             }
             
             // Añade un enlace opcional al menú completo
             contentHTML += `
-                <div class="text-center mt-6">
+                <div class="text-center mt-5">
                     <a href="https://maestroseb.github.io/comedor/menu.html" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">Ver menú completo &rarr;</a>
                 </div>
             `;
