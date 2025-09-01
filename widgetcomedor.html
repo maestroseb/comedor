@@ -40,9 +40,9 @@
          * @returns {string} - La fecha formateada.
          */
         function formatDate(date) {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const year = date.getUTCFullYear();
             return `${day}/${month}/${year}`;
         }
 
@@ -52,7 +52,7 @@
          * @returns {string} - La fecha formateada completa.
          */
         function formatFullDate(date) {
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
             let formattedDate = date.toLocaleDateString('es-ES', options);
             // Reemplazamos " de " con un espacio para un formato más compacto
             formattedDate = formattedDate.replace(/ de /g, ' ');
@@ -142,7 +142,12 @@
                 
                 const csvText = await response.text();
                 const rows = csvText.trim().split(/\r?\n/).slice(1);
-                const todayStr = formatDate(new Date());
+                
+                // Usamos una fecha UTC para "hoy" para que coincida con cómo procesamos las fechas del CSV
+                const today = new Date();
+                const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+                const todayStr = formatDate(todayUTC);
+
                 let todayMenu = null;
                 const dayMap = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
@@ -156,18 +161,22 @@
                     const dayName = safeColumns[2];
                     const dayOffset = dayMap.indexOf(dayName);
 
-                    if (dayOffset === -1) continue; // Si no es un día de la semana válido, saltar fila
+                    if (dayOffset === -1 || !mondayDateStr) continue;
 
-                    // Parsear la fecha del lunes (DD/MM/YYYY) para crear un objeto Date
-                    const [day, month, year] = mondayDateStr.split('/');
-                    const mondayDate = new Date(`${year}-${month}-${day}T12:00:00Z`);
+                    // --- INICIO DE LA CORRECCIÓN ---
+                    // Parsear la fecha del lunes (DD/MM/YYYY) para crear un objeto Date de forma robusta
+                    const [day, month, year] = mondayDateStr.split('/').map(Number);
+                    if (!day || !month || !year) continue; // Saltar si la fecha no es válida
+                    
+                    // Usamos Date.UTC para evitar problemas con zonas horarias. El mes es 0-indexed (0=Enero).
+                    const mondayDate = new Date(Date.UTC(year, month - 1, day));
+                    // --- FIN DE LA CORRECCIÓN ---
 
                     // Calcular la fecha real de la fila sumando el offset al lunes
                     const actualDate = new Date(mondayDate);
-                    actualDate.setDate(mondayDate.getDate() + dayOffset);
+                    actualDate.setUTCDate(mondayDate.getUTCDate() + dayOffset);
                     const actualDateStr = formatDate(actualDate);
                     
-                    // Comparar la fecha calculada con la de hoy
                     if (actualDateStr === todayStr) {
                          const specialNotes = safeColumns[3] || '';
                          const mealsCSV = safeColumns[4] || '';
@@ -203,3 +212,4 @@
 
 </body>
 </html>
+
