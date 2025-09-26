@@ -212,7 +212,13 @@
                         </div>`;
                 }
             } else {
-                 contentHTML = `<div class="bg-gray-50 border-l-4 border-gray-300 p-3 rounded-r-lg"><p class="font-semibold text-gray-600 text-sm">No hay servicio de comedor este día.</p></div>`;
+                // --- INICIO DE LA MEJORA DE IMAGEN ---
+                contentHTML = `
+                    <div class="text-center py-2">
+                         <p class="font-semibold text-gray-700 text-base mb-3">No hay servicio de comedor este día.</p>
+                         <img src="https://raw.githubusercontent.com/maestroseb/comedor/refs/heads/main/hoycomemosencasa.png" alt="Hoy comemos en casa" class="mx-auto w-full max-w-[200px] h-auto">
+                    </div>`;
+                // --- FIN DE LA MEJORA DE IMAGEN ---
             }
 
             let footerHTML = `
