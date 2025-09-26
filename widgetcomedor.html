@@ -19,12 +19,38 @@
         .font-brand {
             font-family: 'Pacifico', cursive;
         }
+        /* --- INICIO DE LA CORRECCIÓN DE RESPONSIVIDAD --- */
+        #menu-widget-container {
+            /* Habilita las Container Queries para este elemento */
+            container-type: inline-size;
+            container-name: menu-widget;
+        }
+
+        /* * Usamos clamp() con unidades 'cqw' (container query width) para que el texto 
+         * se escale fluidamente según el ancho del contenedor del widget.
+         * clamp(MINIMO, IDEAL_ESCALABLE, MAXIMO)
+        */
+        #menu-widget-container .text-4xl {
+            font-size: clamp(1.75rem, 11cqw, 2.75rem); /* Escala el icono principal */
+        }
+        #menu-widget-container h2 {
+            font-size: clamp(1rem, 7cqw, 1.5rem); /* Escala el título "Hoy Comemos" */
+        }
+        #menu-widget-container h3 {
+            font-size: clamp(0.85rem, 5.5cqw, 1.125rem); /* Escala "Platos", "Postre" */
+        }
+        #menu-widget-container p.text-sm,
+        #menu-widget-container ul,
+        #menu-widget-container a.text-sm {
+            font-size: clamp(0.75rem, 5cqw, 1rem); /* Escala textos pequeños y listas */
+        }
+         /* --- FIN DE LA CORRECCIÓN DE RESPONSIVIDAD --- */
     </style>
 </head>
 <body class="bg-transparent">
 
-    <!-- Contenedor del Widget -->
-    <div id="menu-widget-container" class="w-full max-w-xs mx-auto bg-white rounded-2xl shadow-lg p-5 border-t-4 border-cyan-500">
+    <!-- Contenedor del Widget: Cambiado max-w-sm a max-w-md para un mayor tamaño máximo -->
+    <div id="menu-widget-container" class="w-full max-w-md mx-auto bg-white rounded-2xl shadow-lg p-5 border-t-4 border-cyan-500">
         <!-- El contenido se insertará aquí por JavaScript -->
     </div>
 
@@ -75,7 +101,7 @@
                             <div class="text-4xl">${menuData.icon}</div>
                             <div class="text-left">
                                 <h2 class="text-xl font-bold text-gray-800 leading-tight">Menú de Hoy</h2>
-                                <p class="text-gray-500 text-sm">${menuData.fullDate}</p>
+                                <p class="text-sm text-gray-500">${menuData.fullDate}</p>
                             </div>
                         </div>
                         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
@@ -89,18 +115,18 @@
                             <div class="text-4xl">${menuData.icon}</div>
                             <div class="text-left">
                                 <h2 class="text-xl font-bold text-gray-800 leading-tight">Hoy Comemos</h2>
-                                <p class="text-gray-500 text-sm">${menuData.fullDate}</p>
+                                <p class="text-sm text-gray-500">${menuData.fullDate}</p>
                             </div>
                         </div>
                         <div class="space-y-3 mt-3">
                             <div>
-                                <h3 class="font-semibold text-gray-700 flex items-center text-base"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos</h3>
+                                <h3 class="text-base font-semibold text-gray-700 flex items-center"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos</h3>
                                 <ul class="text-sm text-gray-600 space-y-1 mt-1 pl-6">
                                     ${menuData.meals.map(meal => `<li class="list-disc">${meal}</li>`).join('')}
                                 </ul>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-700 flex items-center text-base"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre</h3>
+                                <h3 class="text-base font-semibold text-gray-700 flex items-center"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre</h3>
                                 <p class="text-sm text-gray-600 mt-1 pl-6">${menuData.dessert}</p>
                             </div>
                         </div>
@@ -113,7 +139,7 @@
                         <div class="text-4xl">🏠</div>
                         <div class="text-left">
                             <h2 class="text-xl font-bold text-gray-800 leading-tight">¡Buen provecho!</h2>
-                            <p class="text-gray-500 text-sm">${formatFullDate(new Date())}</p>
+                            <p class="text-sm text-gray-500">${formatFullDate(new Date())}</p>
                         </div>
                     </div>
                 `;
@@ -134,45 +160,37 @@
          */
         async function main() {
             const container = document.getElementById('menu-widget-container');
-            container.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Cargando menú de hoy...</p>`;
+            const CACHE_KEY = 'menuWidgetCache';
+            const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hora de duración del caché
 
-            try {
-                const response = await fetch(GOOGLE_SHEET_URL + '&t=' + new Date().getTime());
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const csvText = await response.text();
+            // --- INICIO DE LA LÓGICA DE CACHÉ ---
+
+            /**
+             * Parsea el texto CSV, encuentra el menú de hoy y renderiza el widget.
+             * @param {string} csvText - El contenido del fichero CSV.
+             */
+            function findMenuAndRender(csvText) {
                 const rows = csvText.trim().split(/\r?\n/).slice(1);
-                
-                // Usamos una fecha UTC para "hoy" para que coincida con cómo procesamos las fechas del CSV
                 const today = new Date();
                 const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
                 const todayStr = formatDate(todayUTC);
-
                 let todayMenu = null;
                 const dayMap = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
 
                 for (const row of rows) {
                     if (!row || row.trim() === '') continue;
-
                     const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
                     const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
-
                     const mondayDateStr = safeColumns[0];
                     const dayName = safeColumns[2];
                     const dayOffset = dayMap.indexOf(dayName);
 
                     if (dayOffset === -1 || !mondayDateStr) continue;
 
-                    // --- INICIO DE LA CORRECCIÓN ---
-                    // Parsear la fecha del lunes (DD/MM/YYYY) para crear un objeto Date de forma robusta
                     const [day, month, year] = mondayDateStr.split('/').map(Number);
-                    if (!day || !month || !year) continue; // Saltar si la fecha no es válida
+                    if (!day || !month || !year) continue; 
                     
-                    // Usamos Date.UTC para evitar problemas con zonas horarias. El mes es 0-indexed (0=Enero).
                     const mondayDate = new Date(Date.UTC(year, month - 1, day));
-                    // --- FIN DE LA CORRECCIÓN ---
-
-                    // Calcular la fecha real de la fila sumando el offset al lunes
                     const actualDate = new Date(mondayDate);
                     actualDate.setUTCDate(mondayDate.getUTCDate() + dayOffset);
                     const actualDateStr = formatDate(actualDate);
@@ -198,13 +216,55 @@
                          break; 
                     }
                 }
-                
                 renderWidget(todayMenu);
+            }
 
+            // 1. Intentar cargar desde el caché
+            let renderedFromCache = false;
+            try {
+                const cachedItem = localStorage.getItem(CACHE_KEY);
+                if (cachedItem) {
+                    const { timestamp, csv } = JSON.parse(cachedItem);
+                    if (Date.now() - timestamp < CACHE_DURATION_MS) {
+                        findMenuAndRender(csv);
+                        renderedFromCache = true;
+                    }
+                }
+            } catch (e) {
+                console.error("Error al leer el caché:", e);
+                localStorage.removeItem(CACHE_KEY); // Limpiar caché corrupto
+            }
+
+            // 2. Si no se cargó desde caché, mostrar el estado de carga
+            if (!renderedFromCache) {
+                container.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Cargando menú de hoy...</p>`;
+            }
+
+            // 3. Obtener siempre los datos frescos para actualizar el caché
+            try {
+                const response = await fetch(GOOGLE_SHEET_URL + '&t=' + new Date().getTime());
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const freshCsvText = await response.text();
+                
+                // Guardar los datos frescos en el caché
+                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                    timestamp: Date.now(),
+                    csv: freshCsvText
+                }));
+
+                // Si no habíamos renderizado desde el caché, hacerlo ahora con los datos frescos
+                if (!renderedFromCache) {
+                    findMenuAndRender(freshCsvText);
+                }
             } catch (error) {
                 console.error("Error al obtener o procesar los datos del menú:", error);
-                container.innerHTML = `<p class="text-center text-red-500">No se pudo cargar el menú.</p>`;
+                // Solo mostrar error si no pudimos renderizar desde el caché
+                if (!renderedFromCache) {
+                    container.innerHTML = `<p class="text-center text-red-500">No se pudo cargar el menú.</p>`;
+                }
             }
+             // --- FIN DE LA LÓGICA DE CACHÉ ---
         }
 
         document.addEventListener('DOMContentLoaded', main);
@@ -212,4 +272,3 @@
 
 </body>
 </html>
-
