@@ -19,52 +19,52 @@
         .font-brand {
             font-family: 'Pacifico', cursive;
         }
-        /* --- INICIO DE LA CORRECCIÓN DE RESPONSIVIDAD --- */
         #menu-widget-container {
-            /* Habilita las Container Queries para este elemento */
             container-type: inline-size;
             container-name: menu-widget;
         }
-
-        /* * Usamos clamp() con unidades 'cqw' (container query width) para que el texto 
-         * se escale fluidamente según el ancho del contenedor del widget.
-         * clamp(MINIMO, IDEAL_ESCALABLE, MAXIMO)
-        */
         #menu-widget-container .text-4xl {
-            font-size: clamp(1.75rem, 11cqw, 2.75rem); /* Escala el icono principal */
+            font-size: clamp(1.75rem, 11cqw, 2.75rem);
         }
         #menu-widget-container h2 {
-            font-size: clamp(1rem, 7cqw, 1.5rem); /* Escala el título "Hoy Comemos" */
+            font-size: clamp(1rem, 7cqw, 1.5rem);
         }
         #menu-widget-container h3 {
-            font-size: clamp(0.85rem, 5.5cqw, 1.125rem); /* Escala "Platos", "Postre" */
+            font-size: clamp(0.85rem, 5.5cqw, 1.125rem);
         }
         #menu-widget-container p.text-sm,
         #menu-widget-container ul,
-        #menu-widget-container a.text-sm {
-            font-size: clamp(0.75rem, 5cqw, 1rem); /* Escala textos pequeños y listas */
+        #menu-widget-container a.text-sm,
+        #menu-widget-container button.text-sm {
+            font-size: clamp(0.75rem, 5cqw, 1rem);
         }
-         /* --- FIN DE LA CORRECCIÓN DE RESPONSIVIDAD --- */
+        /* Estilo para botones de navegación desactivados */
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="bg-transparent p-4">
 
-    <!-- Contenedor del Widget: Cambiado max-w-sm a max-w-md para un mayor tamaño máximo -->
     <div id="menu-widget-container" class="w-full max-w-md mx-auto bg-white rounded-2xl shadow-lg p-5 border-t-4 border-cyan-500">
         <!-- El contenido se insertará aquí por JavaScript -->
     </div>
 
     <script>
-        // --- CONFIGURACIÓN ---
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-pyua5eFZ5z974Y_x0mIY7AvLRBEM4aaa_p69r9G4VXHP7NYilGJG4vfzwoYedMEmT_MLgEIVCCpZ/pub?output=csv";
+        const container = document.getElementById('menu-widget-container');
+        
+        // --- ESTADO GLOBAL DE LA APLICACIÓN ---
+        let allMenus = [];
+        let currentDate = new Date(new Date().setHours(0, 0, 0, 0)); // Fecha actual sin la hora
+        let menuDateRange = { first: null, last: null };
 
-        // --- LÓGICA DEL WIDGET ---
+        // --- FUNCIONES AUXILIARES DE FECHA ---
+        function getUTCDate(date) {
+            return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        }
 
-        /**
-         * Formatea una fecha en el formato DD/MM/YYYY
-         * @param {Date} date - El objeto Date a formatear.
-         * @returns {string} - La fecha formateada.
-         */
         function formatDate(date) {
             const day = String(date.getUTCDate()).padStart(2, '0');
             const month = String(date.getUTCMonth() + 1).padStart(2, '0');
@@ -72,53 +72,74 @@
             return `${day}/${month}/${year}`;
         }
 
-        /**
-         * Formatea una fecha en el formato "Día, DD Mes YYYY" (sin "de")
-         * @param {Date} date - El objeto Date a formatear.
-         * @returns {string} - La fecha formateada completa.
-         */
         function formatFullDate(date) {
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' };
             let formattedDate = date.toLocaleDateString('es-ES', options);
-            // Reemplazamos " de " con un espacio para un formato más compacto
             formattedDate = formattedDate.replace(/ de /g, ' ');
             return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
         }
+        
+        function isSameDay(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getDate() === date2.getDate();
+        }
 
-        /**
-         * Renderiza el contenido del widget.
-         * @param {object|null} menuData - Los datos del menú de hoy, o null si no hay.
-         */
-        function renderWidget(menuData) {
-            const container = document.getElementById('menu-widget-container');
+        // --- LÓGICA DE NAVEGACIÓN ---
+        function showPrevDay() {
+            currentDate.setDate(currentDate.getDate() - 1);
+            updateDisplay();
+        }
+
+        function showNextDay() {
+            currentDate.setDate(currentDate.getDate() + 1);
+            updateDisplay();
+        }
+
+        function showToday() {
+            currentDate = new Date(new Date().setHours(0, 0, 0, 0));
+            updateDisplay();
+        }
+
+        // --- LÓGICA DE RENDERIZADO ---
+        function updateDisplay() {
+            const menuData = allMenus.find(item => isSameDay(item.date, currentDate))?.menu || null;
+            renderWidget(menuData, currentDate);
+        }
+
+        function renderWidget(menuData, displayDate) {
+            const isToday = isSameDay(displayDate, new Date(new Date().setHours(0, 0, 0, 0)));
+            const displayDateUTC = getUTCDate(displayDate);
+            
+            let title = "Hoy Comemos";
+            if (!isToday) title = "Menú del Día";
+            if (menuData && (menuData.isSpecial || menuData.isHoliday)) title = "Menú Especial";
+            if (!menuData) title = "¡Buen provecho!";
+
+            let headerHTML = `
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="text-4xl">${menuData ? menuData.icon : '🏠'}</div>
+                    <div class="text-left flex-grow">
+                        <div class="flex justify-between items-center pr-2">
+                            <h2 class="text-xl font-bold text-gray-800 leading-tight">${title}</h2>
+                            <button id="today-btn" class="text-sm font-semibold bg-cyan-500 text-white px-3 py-1 rounded-lg shadow hover:bg-cyan-600 transition-all duration-300 ${isToday ? 'opacity-0 -translate-y-2' : 'opacity-100 translate-y-0'}">Hoy</button>
+                        </div>
+                        <div class="flex items-center justify-center gap-2">
+                            <button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" ${!menuDateRange.first || displayDateUTC <= menuDateRange.first ? 'disabled' : ''}><i class="fas fa-chevron-left fa-xs"></i></button>
+                            <p class="text-sm text-gray-500 flex-grow text-center whitespace-nowrap">${formatFullDate(displayDateUTC)}</p>
+                            <button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors" ${!menuDateRange.last || displayDateUTC >= menuDateRange.last ? 'disabled' : ''}><i class="fas fa-chevron-right fa-xs"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
             let contentHTML = '';
-
             if (menuData) {
-                // Si es un día especial o festivo
                 if (menuData.isSpecial || menuData.isHoliday) {
-                    contentHTML = `
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="text-4xl">${menuData.icon}</div>
-                            <div class="text-left">
-                                <h2 class="text-xl font-bold text-gray-800 leading-tight">Menú de Hoy</h2>
-                                <p class="text-sm text-gray-500">${menuData.fullDate}</p>
-                            </div>
-                        </div>
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg">
-                            <p class="font-semibold text-yellow-800 text-sm">${menuData.meals[0]}</p>
-                        </div>
-                    `;
+                    contentHTML = `<div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg"><p class="font-semibold text-yellow-800 text-sm">${menuData.meals[0]}</p></div>`;
                 } else {
-                // Si es un día normal de menú
                     contentHTML = `
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="text-4xl">${menuData.icon}</div>
-                            <div class="text-left">
-                                <h2 class="text-xl font-bold text-gray-800 leading-tight">Hoy Comemos</h2>
-                                <p class="text-sm text-gray-500">${menuData.fullDate}</p>
-                            </div>
-                        </div>
-                        <div class="space-y-3 mt-3">
+                        <div class="space-y-3">
                             <div>
                                 <h3 class="text-base font-semibold text-gray-700 flex items-center"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos</h3>
                                 <ul class="text-sm text-gray-600 space-y-1 mt-1 pl-6">
@@ -129,142 +150,113 @@
                                 <h3 class="text-base font-semibold text-gray-700 flex items-center"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre</h3>
                                 <p class="text-sm text-gray-600 mt-1 pl-6">${menuData.dessert}</p>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }
             } else {
-                // Si no hay menú para hoy
-                contentHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="text-4xl">🏠</div>
-                        <div class="text-left">
-                            <h2 class="text-xl font-bold text-gray-800 leading-tight">¡Buen provecho!</h2>
-                            <p class="text-sm text-gray-500">${formatFullDate(new Date())}</p>
-                        </div>
-                    </div>
-                `;
+                 contentHTML = `<div class="bg-gray-50 border-l-4 border-gray-300 p-3 rounded-r-lg"><p class="font-semibold text-gray-600 text-sm">No hay servicio de comedor este día.</p></div>`;
             }
-            
-            // Añade un enlace opcional al menú completo
-            contentHTML += `
-                <div class="text-center mt-5">
+
+            let footerHTML = `
+                <div class="flex items-center justify-center gap-4 mt-5">
                     <a href="https://maestroseb.github.io/comedor/menu.html" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">Ver menú completo &rarr;</a>
-                </div>
-            `;
-
-            container.innerHTML = contentHTML;
-        }
-
-        /**
-         * Función principal que se ejecuta al cargar la página.
-         */
-        async function main() {
-            const container = document.getElementById('menu-widget-container');
-            const CACHE_KEY = 'menuWidgetCache';
-            const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hora de duración del caché
-
-            // --- INICIO DE LA LÓGICA DE CACHÉ ---
-
-            /**
-             * Parsea el texto CSV, encuentra el menú de hoy y renderiza el widget.
-             * @param {string} csvText - El contenido del fichero CSV.
-             */
-            function findMenuAndRender(csvText) {
-                const rows = csvText.trim().split(/\r?\n/).slice(1);
-                const today = new Date();
-                const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
-                const todayStr = formatDate(todayUTC);
-                let todayMenu = null;
-                const dayMap = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
-
-                for (const row of rows) {
-                    if (!row || row.trim() === '') continue;
-                    const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
-                    const mondayDateStr = safeColumns[0];
-                    const dayName = safeColumns[2];
-                    const dayOffset = dayMap.indexOf(dayName);
-
-                    if (dayOffset === -1 || !mondayDateStr) continue;
-
-                    const [day, month, year] = mondayDateStr.split('/').map(Number);
-                    if (!day || !month || !year) continue; 
-                    
-                    const mondayDate = new Date(Date.UTC(year, month - 1, day));
-                    const actualDate = new Date(mondayDate);
-                    actualDate.setUTCDate(mondayDate.getUTCDate() + dayOffset);
-                    const actualDateStr = formatDate(actualDate);
-                    
-                    if (actualDateStr === todayStr) {
-                         const specialNotes = safeColumns[3] || '';
-                         const mealsCSV = safeColumns[4] || '';
-                         const dessert = safeColumns[5] || '';
-                         const icon = safeColumns[7] || '🍽️';
-                         
-                         const isHoliday = specialNotes.toLowerCase().includes('no lectivo');
-                         const isSpecialEvent = specialNotes && !isHoliday;
-                         
-                         todayMenu = {
-                            dayName: dayName,
-                            fullDate: formatFullDate(actualDate),
-                            meals: isSpecialEvent || isHoliday ? [specialNotes] : mealsCSV.split(';').map(m => m.trim()),
-                            dessert: dessert,
-                            icon: icon,
-                            isSpecial: isSpecialEvent,
-                            isHoliday: isHoliday
-                         };
-                         break; 
-                    }
-                }
-                renderWidget(todayMenu);
+                </div>`;
+            
+            container.innerHTML = headerHTML + contentHTML + footerHTML;
+            
+            // Re-asignar eventos
+            document.getElementById('prev-day-btn').onclick = showPrevDay;
+            document.getElementById('next-day-btn').onclick = showNextDay;
+            if (!isToday) {
+                 document.getElementById('today-btn').onclick = showToday;
             }
+        }
+        
+        // --- LÓGICA DE CARGA Y CACHÉ ---
+        function parseAndStoreMenuData(csvText) {
+            allMenus = [];
+            const rows = csvText.trim().split(/\r?\n/).slice(1);
+            
+            rows.forEach(row => {
+                if (!row || row.trim() === '') return;
+                const columns = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                const safeColumns = columns.map(field => (field || "").replace(/^"|"$/g, '').trim());
 
-            // 1. Intentar cargar desde el caché
+                // --- INICIO DE LA CORRECCIÓN ---
+                // Ahora leemos la fecha directamente de la primera columna (A)
+                const actualDateStr = safeColumns[0];
+                if (!actualDateStr) return; // Si no hay fecha en la fila, la saltamos
+
+                const [day, month, year] = actualDateStr.split('/').map(Number);
+                if (!day || !month || !year) return; // Si la fecha no es válida, la saltamos
+                
+                const actualDate = new Date(Date.UTC(year, month - 1, day));
+                // --- FIN DE LA CORRECCIÓN ---
+
+                const specialNotes = safeColumns[3] || '';
+                const mealsCSV = safeColumns[4] || '';
+                const dessert = safeColumns[5] || '';
+                const icon = safeColumns[7] || '🍽️';
+                
+                allMenus.push({
+                    date: actualDate,
+                    menu: {
+                        meals: (specialNotes.toLowerCase().includes('no lectivo') || (specialNotes && !specialNotes.toLowerCase().includes('no lectivo'))) ? [specialNotes] : mealsCSV.split(';').map(m => m.trim()),
+                        dessert: dessert,
+                        icon: icon,
+                        isSpecial: specialNotes && !specialNotes.toLowerCase().includes('no lectivo'),
+                        isHoliday: specialNotes.toLowerCase().includes('no lectivo')
+                    }
+                });
+            });
+
+            if (allMenus.length > 0) {
+                allMenus.sort((a, b) => a.date - b.date);
+                menuDateRange.first = allMenus[0].date;
+                menuDateRange.last = allMenus[allMenus.length - 1].date;
+            }
+        }
+        
+        async function main() {
+            const CACHE_KEY = 'menuWidgetCache';
+            const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hora
+
             let renderedFromCache = false;
             try {
                 const cachedItem = localStorage.getItem(CACHE_KEY);
                 if (cachedItem) {
                     const { timestamp, csv } = JSON.parse(cachedItem);
                     if (Date.now() - timestamp < CACHE_DURATION_MS) {
-                        findMenuAndRender(csv);
+                        parseAndStoreMenuData(csv);
+                        updateDisplay();
                         renderedFromCache = true;
                     }
                 }
             } catch (e) {
                 console.error("Error al leer el caché:", e);
-                localStorage.removeItem(CACHE_KEY); // Limpiar caché corrupto
+                localStorage.removeItem(CACHE_KEY);
             }
 
-            // 2. Si no se cargó desde caché, mostrar el estado de carga
             if (!renderedFromCache) {
                 container.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Cargando menú de hoy...</p>`;
             }
 
-            // 3. Obtener siempre los datos frescos para actualizar el caché
             try {
                 const response = await fetch(GOOGLE_SHEET_URL + '&t=' + new Date().getTime());
                 if (!response.ok) throw new Error('Network response was not ok');
                 
                 const freshCsvText = await response.text();
-                
-                // Guardar los datos frescos en el caché
-                localStorage.setItem(CACHE_KEY, JSON.stringify({
-                    timestamp: Date.now(),
-                    csv: freshCsvText
-                }));
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), csv: freshCsvText }));
 
-                // Si no habíamos renderizado desde el caché, hacerlo ahora con los datos frescos
                 if (!renderedFromCache) {
-                    findMenuAndRender(freshCsvText);
+                    parseAndStoreMenuData(freshCsvText);
+                    updateDisplay();
                 }
             } catch (error) {
-                console.error("Error al obtener o procesar los datos del menú:", error);
-                // Solo mostrar error si no pudimos renderizar desde el caché
+                console.error("Error al obtener los datos del menú:", error);
                 if (!renderedFromCache) {
                     container.innerHTML = `<p class="text-center text-red-500">No se pudo cargar el menú.</p>`;
                 }
             }
-             // --- FIN DE LA LÓGICA DE CACHÉ ---
         }
 
         document.addEventListener('DOMContentLoaded', main);
