@@ -153,72 +153,97 @@
                 container.classList.add('border-gray-300');
             }
             
+            const dayOfWeek = displayDateUTC.getDay();
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
             let title;
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
 
-            if (isActuallyToday) {
-                title = "Hoy Comemos";
-            } else if (isSameDay(displayDate, tomorrow)) {
-                title = "Mañana Comemos";
-            } else if (displayDate > today) {
-                title = "Próximo Menú";
-            } else {
-                title = "Menú del Día";
+            if (menuData) {
+                if (menuData.isHoliday) {
+                    title = "¡Hoy es festivo!";
+                } else if (menuData.isSpecial) {
+                    title = "Menú Especial";
+                } else {
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+
+                    if (isActuallyToday) {
+                        title = "Hoy Comemos";
+                    } else if (isSameDay(displayDate, tomorrow)) {
+                        title = "Mañana Comemos";
+                    } else if (displayDate > today) {
+                        title = "Próximo Menú";
+                    } else {
+                        title = "Menú del Día";
+                    }
+                }
+            } else { 
+                if (isWeekend) {
+                    title = "¡Es fin de semana!";
+                } else {
+                    title = "¡Buen provecho!";
+                }
             }
 
-            if (menuData && (menuData.isSpecial || menuData.isHoliday)) title = "Menú Especial";
-            if (!menuData) title = "¡Buen provecho!";
+            let weekBarHTML = '';
+            const adjustedDayIndex = (dayOfWeek === 0) ? 6 : dayOfWeek - 1; 
+            const dayColors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-400', 'bg-blue-400', 'bg-indigo-400', 'bg-purple-400'];
+            for (let i = 0; i < 7; i++) {
+                const colorClass = i === adjustedDayIndex ? dayColors[i] : 'bg-gray-200';
+                weekBarHTML += `<div class="w-6 h-1.5 rounded-full ${colorClass} transition-colors duration-300"></div>`;
+            }
 
             let headerHTML = `
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="text-4xl">${menuData ? menuData.icon : '🏠'}</div>
-                    <div class="text-left flex-grow min-w-0">
-                        <!-- INICIO DE LA CORRECCIÓN DE ALINEACIÓN -->
-                        <div class="grid grid-cols-[1fr_auto] items-center">
-                            <h2 class="text-xl font-bold text-gray-800 leading-tight">${title}</h2>
-                            <button id="today-btn" class="text-sm font-semibold bg-cyan-500 text-white px-3 py-1 rounded-lg shadow hover:bg-cyan-600 transition-all duration-300 ${isActuallyToday ? 'opacity-0 -translate-y-2' : 'opacity-100 translate-y-0'}">Hoy</button>
-                        </div>
-                        <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2 mt-1">
-                            <button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0" ${!menuDateRange.first || displayDateUTC <= menuDateRange.first ? 'disabled' : ''}><i class="fas fa-chevron-left fa-xs"></i></button>
-                            <p class="text-sm text-gray-500 text-center whitespace-nowrap">
+                <div class="mb-3 space-y-3">
+                    <!-- Fila del Título -->
+                    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3">
+                        <div class="text-4xl">${menuData && !menuData.isHoliday ? menuData.icon : '🏠'}</div>
+                        <h2 class="text-xl font-bold text-gray-800 leading-tight text-left">${title}</h2>
+                        <button id="today-btn" class="text-sm font-semibold bg-cyan-500 text-white px-3 py-1 rounded-lg shadow hover:bg-cyan-600 transition-all duration-300 ${isActuallyToday ? 'opacity-0 -translate-y-2' : 'opacity-100 translate-y-0'}">Hoy</button>
+                    </div>
+                    
+                    <!-- Fila del Selector de Fecha -->
+                    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+                        <button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0" ${!menuDateRange.first || displayDateUTC <= menuDateRange.first ? 'disabled' : ''}><i class="fas fa-chevron-left fa-xs"></i></button>
+                        
+                        <div class="text-center">
+                            <p class="text-sm font-bold text-gray-600 whitespace-nowrap">
                                 <span class="long-date">${formatFullDate(displayDateUTC)}</span>
                                 <span class="short-date">${formatShortDate(displayDateUTC)}</span>
                             </p>
-                            <button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0" ${!menuDateRange.last || displayDateUTC >= menuDateRange.last ? 'disabled' : ''}><i class="fas fa-chevron-right fa-xs"></i></button>
+                            <div class="flex justify-center items-center gap-1.5 mt-1.5">
+                                ${weekBarHTML}
+                            </div>
                         </div>
-                        <!-- FIN DE LA CORRECCIÓN DE ALINEACIÓN -->
+                        
+                        <button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0" ${!menuDateRange.last || displayDateUTC >= menuDateRange.last ? 'disabled' : ''}><i class="fas fa-chevron-right fa-xs"></i></button>
                     </div>
                 </div>
             `;
 
+
             let contentHTML = '';
-            if (menuData) {
-                if (menuData.isSpecial || menuData.isHoliday) {
-                    contentHTML = `<div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg"><p class="font-semibold text-yellow-800 text-sm">${menuData.meals[0]}</p></div>`;
-                } else {
-                    contentHTML = `
-                        <div class="space-y-3">
-                            <div>
-                                <h3 class="text-base font-semibold text-gray-700 flex items-center"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos</h3>
-                                <ul class="text-sm text-gray-600 space-y-1 mt-1 pl-6">
-                                    ${menuData.meals.map(meal => `<li class="list-disc">${meal}</li>`).join('')}
-                                </ul>
-                            </div>
-                            <div>
-                                <h3 class="text-base font-semibold text-gray-700 flex items-center"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre</h3>
-                                <p class="text-sm text-gray-600 mt-1 pl-6">${menuData.dessert}</p>
-                            </div>
-                        </div>`;
-                }
-            } else {
-                // --- INICIO DE LA MEJORA DE ALTURA ---
+            if (menuData && !menuData.isHoliday && !menuData.isSpecial) {
                 contentHTML = `
+                    <div class="space-y-3">
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-700 flex items-center"><i class="fas fa-utensils mr-2 text-orange-500"></i>Platos</h3>
+                            <ul class="text-sm text-gray-600 space-y-1 mt-1 pl-6">
+                                ${menuData.meals.map(meal => `<li class="list-disc">${meal}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-700 flex items-center"><i class="fas fa-ice-cream mr-2 text-pink-500"></i>Postre</h3>
+                            <p class="text-sm text-gray-600 mt-1 pl-6">${menuData.dessert}</p>
+                        </div>
+                    </div>`;
+            } else if (menuData && menuData.isSpecial) {
+                contentHTML = `<div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg"><p class="font-semibold text-yellow-800 text-sm">${menuData.meals[0]}</p></div>`;
+            } else {
+                 contentHTML = `
                     <div class="text-center">
                          <p class="font-semibold text-gray-700 text-base mb-2">No hay servicio de comedor este día.</p>
                          <img src="https://raw.githubusercontent.com/maestroseb/comedor/refs/heads/main/hoycomemosencasa.png" alt="Hoy comemos en casa" class="mx-auto w-full max-w-[150px] h-auto">
                     </div>`;
-                // --- FIN DE LA MEJORA DE ALTURA ---
             }
 
             let footerHTML = `
@@ -240,8 +265,7 @@
             const startOfDay = new Date(startDate);
             startOfDay.setHours(0, 0, 0, 0);
 
-            // Buscamos el primer menú cuya fecha sea ESTRICTAMENTE posterior a la de inicio.
-            const nextMenu = allMenus.find(menu => menu.date > startOfDay);
+            const nextMenu = allMenus.find(menu => menu.date > startOfDay && menu.menu && !menu.menu.isHoliday);
             return nextMenu ? nextMenu.date : null;
         }
 
@@ -267,14 +291,17 @@
                 const dessert = safeColumns[5] || '';
                 const icon = safeColumns[7] || '🍽️';
                 
+                const isHoliday = specialNotes.toLowerCase().includes('no lectivo');
+                const isSpecial = specialNotes && !isHoliday;
+
                 allMenus.push({
                     date: actualDate,
                     menu: {
-                        meals: (specialNotes.toLowerCase().includes('no lectivo') || (specialNotes && !specialNotes.toLowerCase().includes('no lectivo'))) ? [specialNotes] : mealsCSV.split(';').map(m => m.trim()),
+                        meals: isHoliday || isSpecial ? [specialNotes] : mealsCSV.split(';').map(m => m.trim()),
                         dessert: dessert,
                         icon: icon,
-                        isSpecial: specialNotes && !specialNotes.toLowerCase().includes('no lectivo'),
-                        isHoliday: specialNotes.toLowerCase().includes('no lectivo')
+                        isSpecial: isSpecial,
+                        isHoliday: isHoliday
                     }
                 });
             });
@@ -290,22 +317,17 @@
             const today = new Date(new Date().setHours(0, 0, 0, 0));
             const madridHour = getMadridHour();
 
-            // Solo aplicamos la lógica de anticipación si son las 16:00 o más tarde.
             if (madridHour >= 16) {
                 const tomorrow = new Date(today);
                 tomorrow.setDate(tomorrow.getDate() + 1);
 
-                // Buscamos el próximo día CON menú
                 const nextMenuDate = findNextAvailableMenu(today);
                 
-                // Si existe un próximo menú Y ese próximo menú es MAÑANA, entonces lo mostramos.
                 if (nextMenuDate && isSameDay(nextMenuDate, tomorrow)) {
                     return new Date(nextMenuDate.getTime());
                 }
             }
             
-            // En cualquier otro caso (antes de las 16:00, o si el próximo menú no es mañana),
-            // mostramos el día de hoy.
             return today;
         }
 
