@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Pacifico&display=swap" rel="stylesheet">
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -114,23 +114,23 @@
                    date1.getDate() === date2.getDate();
         }
 
-        // --- LÓGICA DE NAVEGACIÓN ---
+        // --- LÓGICA DE NAVEGÁCIÓn ---
         function showPrevDay() {
             const prevDate = new Date(currentDate);
-            prevDate.setDate(prevDate.getDate() - 1);
+            prevDate.setUTCDate(prevDate.getUTCDate() - 1);
             currentDate = prevDate;
             updateDisplay();
         }
 
         function showNextDay() {
             const nextDate = new Date(currentDate);
-            nextDate.setDate(nextDate.getDate() + 1);
+            nextDate.setUTCDate(nextDate.getUTCDate() + 1);
             currentDate = nextDate;
             updateDisplay();
         }
 
         function showToday() {
-            currentDate = new Date(new Date().setHours(0, 0, 0, 0));
+            currentDate = getUTCDate(new Date());
             updateDisplay();
         }
         
@@ -141,10 +141,9 @@
         }
 
         function renderWidget(menuData, displayDate) {
-            const today = new Date(new Date().setHours(0, 0, 0, 0));
+            const today = getUTCDate(new Date());
             const isActuallyToday = isSameDay(displayDate, today);
-            const displayDateUTC = getUTCDate(displayDate);
-
+            
             if (isActuallyToday) {
                 container.classList.remove('border-gray-300');
                 container.classList.add('border-cyan-500');
@@ -153,7 +152,7 @@
                 container.classList.add('border-gray-300');
             }
             
-            const dayOfWeek = displayDateUTC.getDay();
+            const dayOfWeek = displayDate.getUTCDay();
             const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
             let title;
 
@@ -164,7 +163,7 @@
                     title = "Menú Especial";
                 } else {
                     const tomorrow = new Date(today);
-                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
                     if (isActuallyToday) {
                         title = "Hoy Comemos";
@@ -189,37 +188,39 @@
             const dayColors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-400', 'bg-blue-400', 'bg-indigo-400', 'bg-purple-400'];
             for (let i = 0; i < 7; i++) {
                 const colorClass = i === adjustedDayIndex ? dayColors[i] : 'bg-gray-200';
-                weekBarHTML += `<div class="w-6 h-1.5 rounded-full ${colorClass} transition-colors duration-300"></div>`;
+                weekBarHTML += `<div class="flex-1 max-w-[24px] h-1.5 rounded-full ${colorClass} transition-colors duration-300"></div>`;
             }
 
             let headerHTML = `
-                <div class="mb-3 space-y-3">
+                <div class="space-y-2">
                     <!-- Fila del Título -->
                     <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3">
                         <div class="text-4xl">${menuData && !menuData.isHoliday ? menuData.icon : '🏠'}</div>
                         <h2 class="text-xl font-bold text-gray-800 leading-tight text-left">${title}</h2>
-                        <button id="today-btn" class="text-sm font-semibold bg-cyan-500 text-white px-3 py-1 rounded-lg shadow hover:bg-cyan-600 transition-all duration-300 ${isActuallyToday ? 'opacity-0 -translate-y-2' : 'opacity-100 translate-y-0'}">Hoy</button>
+                        <button id="today-btn" class="text-sm font-semibold bg-cyan-500 text-white px-3 py-1 rounded-lg shadow hover:bg-cyan-600 transition-all duration-300 ${isActuallyToday ? 'opacity-0 -translate-y-2 pointer-events-none' : 'opacity-100 translate-y-0'}">Hoy</button>
                     </div>
                     
                     <!-- Fila del Selector de Fecha -->
-                    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-2">
-                        <button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0" ${!menuDateRange.first || displayDateUTC <= menuDateRange.first ? 'disabled' : ''}><i class="fas fa-chevron-left fa-xs"></i></button>
+                    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-1 sm:gap-2">
+                        <button id="prev-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0" ${!menuDateRange.first || displayDate <= menuDateRange.first ? 'disabled' : ''}><i class="fas fa-chevron-left fa-xs"></i></button>
                         
-                        <div class="text-center">
+                        <div class="text-center overflow-hidden">
                             <p class="text-sm font-bold text-gray-600 whitespace-nowrap">
-                                <span class="long-date">${formatFullDate(displayDateUTC)}</span>
-                                <span class="short-date">${formatShortDate(displayDateUTC)}</span>
+                                <span class="long-date">${formatFullDate(displayDate)}</span>
+                                <span class="short-date">${formatShortDate(displayDate)}</span>
                             </p>
-                            <div class="flex justify-center items-center gap-1.5 mt-1.5">
-                                ${weekBarHTML}
-                            </div>
                         </div>
                         
-                        <button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0" ${!menuDateRange.last || displayDateUTC >= menuDateRange.last ? 'disabled' : ''}><i class="fas fa-chevron-right fa-xs"></i></button>
+                        <button id="next-day-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0" ${!menuDateRange.last || displayDate >= menuDateRange.last ? 'disabled' : ''}><i class="fas fa-chevron-right fa-xs"></i></button>
                     </div>
                 </div>
             `;
 
+            const weekBarContainerHTML = `
+                <div class="flex justify-center items-center gap-1 sm:gap-1.5 mt-1 mb-3">
+                    ${weekBarHTML}
+                </div>
+            `;
 
             let contentHTML = '';
             if (menuData && !menuData.isHoliday && !menuData.isSpecial) {
@@ -240,10 +241,10 @@
                 contentHTML = `<div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded-r-lg"><p class="font-semibold text-yellow-800 text-sm">${menuData.meals[0]}</p></div>`;
             } else {
                  contentHTML = `
-                    <div class="text-center">
-                         <p class="font-semibold text-gray-700 text-base mb-2">No hay servicio de comedor este día.</p>
-                         <img src="https://raw.githubusercontent.com/maestroseb/comedor/refs/heads/main/hoycomemosencasa.png" alt="Hoy comemos en casa" class="mx-auto w-full max-w-[150px] h-auto">
-                    </div>`;
+                     <div class="text-center">
+                          <p class="font-semibold text-gray-700 text-base mb-2">No hay servicio de comedor este día.</p>
+                          <img src="https://raw.githubusercontent.com/maestroseb/comedor/refs/heads/main/hoycomemosencasa.png" alt="Hoy comemos en casa" class="mx-auto w-full max-w-[150px] h-auto">
+                     </div>`;
             }
 
             let footerHTML = `
@@ -251,11 +252,11 @@
                     <a href="https://maestroseb.github.io/comedor/menu.html" target="_blank" rel="noopener noreferrer" class="text-sm font-semibold text-cyan-600 hover:text-cyan-700 transition-colors">Ver menú completo &rarr;</a>
                 </div>`;
             
-            container.innerHTML = headerHTML + contentHTML + footerHTML;
+            container.innerHTML = headerHTML + weekBarContainerHTML + contentHTML + footerHTML;
             
             document.getElementById('prev-day-btn').onclick = showPrevDay;
             document.getElementById('next-day-btn').onclick = showNextDay;
-            if (!isActuallyToday) {
+            if (document.getElementById('today-btn')) {
                  document.getElementById('today-btn').onclick = showToday;
             }
         }
@@ -263,7 +264,7 @@
         // --- LÓGICA DE CARGA Y CACHÉ ---
         function findNextAvailableMenu(startDate) {
             const startOfDay = new Date(startDate);
-            startOfDay.setHours(0, 0, 0, 0);
+            startOfDay.setUTCHours(0, 0, 0, 0);
 
             const nextMenu = allMenus.find(menu => menu.date > startOfDay && menu.menu && !menu.menu.isHoliday);
             return nextMenu ? nextMenu.date : null;
@@ -314,12 +315,12 @@
         }
         
         function determineInitialDate() {
-            const today = new Date(new Date().setHours(0, 0, 0, 0));
+            const today = getUTCDate(new Date());
             const madridHour = getMadridHour();
 
             if (madridHour >= 16) {
                 const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
                 const nextMenuDate = findNextAvailableMenu(today);
                 
@@ -356,18 +357,23 @@
                 container.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Cargando menú...</p>`;
             }
 
+
+
             try {
                 const response = await fetch(GOOGLE_SHEET_URL + '&t=' + new Date().getTime());
                 if (!response.ok) throw new Error('Network response was not ok');
                 
                 const freshCsvText = await response.text();
-                localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), csv: freshCsvText }));
+                const cachedData = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}');
+                const oldCsv = cachedData.csv || '';
 
-                if (!renderedFromCache) {
+                if (!renderedFromCache || oldCsv !== freshCsvText) {
                     parseAndStoreMenuData(freshCsvText);
                     currentDate = determineInitialDate();
                     updateDisplay();
                 }
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), csv: freshCsvText }));
+
             } catch (error) {
                 console.error("Error al obtener los datos del menú:", error);
                 if (!renderedFromCache) {
